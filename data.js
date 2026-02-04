@@ -96,10 +96,14 @@ export const AvatarRenderer = {
                 const offsetX = item.x || 0;
                 const offsetY = item.y || 0;
                 
+                const scale = item.scale || 1;
+                const drawW = width * scale;
+                const drawH = height * scale;
+
                 ctx.drawImage(
                     img, 
                     srcX, srcY, srcW, srcH,
-                    offsetX, offsetY, width, height
+                    offsetX, offsetY, drawW, drawH
                 );
             }
         };

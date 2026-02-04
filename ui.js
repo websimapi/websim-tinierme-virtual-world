@@ -64,6 +64,15 @@ export class UIManager {
             document.getElementById('minigame-container').classList.remove('hidden');
             MinigameManager.startGame('nugget');
         };
+
+        // Scroll Buttons
+        const scroller = document.getElementById('creator-options');
+        document.getElementById('scroll-left').addEventListener('click', () => {
+            scroller.scrollBy({ left: -100, behavior: 'smooth' });
+        });
+        document.getElementById('scroll-right').addEventListener('click', () => {
+            scroller.scrollBy({ left: 100, behavior: 'smooth' });
+        });
     }
 
     showScreen(id) {
@@ -166,11 +175,13 @@ export class UIManager {
                 // To make it usable, we check if the click is somewhat near the center + offset.
                 // Or better: Just check distance to "center of item" which is canvasX + renderScale/2 + item.x
                 
-                const itemCenterX = canvasX + item.x + renderScale/2;
-                const itemCenterY = canvasY + item.y + renderScale/2;
+                const itemScale = item.scale || 1;
+                const drawSize = renderScale * itemScale;
+                const itemCenterX = canvasX + item.x + drawSize/2;
+                const itemCenterY = canvasY + item.y + drawSize/2;
                 
-                // Generous hit radius (e.g. 1/4 of total scale)
-                const hitRadius = renderScale * 0.3; 
+                // Hit radius scaled to item size
+                const hitRadius = drawSize * 0.4; 
                 
                 if (Math.abs(tx - itemCenterX) < hitRadius && Math.abs(ty - itemCenterY) < hitRadius) {
                     activeItemIndex = i;
@@ -297,12 +308,29 @@ export class UIManager {
                     this.app.state.currentAvatar.items = [];
                 }
 
-                // Add with slight random offset so they don't stack perfectly invisibly
-                const offset = (Math.random() - 0.5) * 20;
+                // Default scale logic
+                let scale = 1;
+                let offsetX = 0;
+                let offsetY = 0;
+
+                // Scale down faces/features as requested
+                if (item.type === 'face') {
+                    scale = 0.5;
+                    // Attempt to center (Approximation since we don't have exact render dimensions here)
+                    // Users can drag to fix position
+                    offsetX = 50 + (Math.random() - 0.5) * 20;
+                    offsetY = 50 + (Math.random() - 0.5) * 20;
+                } else {
+                    const offset = (Math.random() - 0.5) * 20;
+                    offsetX = offset;
+                    offsetY = offset;
+                }
+
                 this.app.state.currentAvatar.items.push({
                     id: item.id,
-                    x: offset,
-                    y: offset
+                    x: offsetX,
+                    y: offsetY,
+                    scale: scale
                 });
             };
             

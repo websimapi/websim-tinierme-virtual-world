@@ -11,8 +11,18 @@ export const RoomData = {
         y: 0.5, // Center Y (0-1 normalized)
         width: 200,
         height: 150,
-        // Z-clip area: normalized Y threshold where depth sorting switches
-        clipY: 0.55 
+        // Z-clip area: Pixels relative to center Y. Positive = down.
+        // Moved lower to ensure characters stay "behind" the fountain longer.
+        clipOffset: 35,
+        // Collision polygon: offsets relative to center X,Y
+        // Defines the base shape to prevent walking "into" the front/sides
+        collisionPoly: [
+            {x: -50, y: 15}, // Top Left (flat back to walk behind)
+            {x: 50, y: 15},  // Top Right
+            {x: 85, y: 45},  // Right Side
+            {x: 0, y: 70},   // Bottom Point
+            {x: -85, y: 45}  // Left Side
+        ]
     }
 };
 

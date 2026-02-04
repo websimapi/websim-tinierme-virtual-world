@@ -152,11 +152,13 @@ export class GameWorld {
         // Update Logic
         const speed = 3;
         const state = this.app.state;
+        let nextX = state.playerX;
+        let nextY = state.playerY;
 
         // Joystick/Keyboard movement
         if (state.input.x !== 0 || state.input.y !== 0) {
-            state.playerX += state.input.x * speed;
-            state.playerY += state.input.y * speed;
+            nextX += state.input.x * speed;
+            nextY += state.input.y * speed;
             state.targetX = null; // Cancel click move
         } 
         // Click to move
@@ -166,11 +168,11 @@ export class GameWorld {
             const dist = Math.sqrt(dx*dx + dy*dy);
             
             if (dist > speed) {
-                state.playerX += (dx/dist) * speed;
-                state.playerY += (dy/dist) * speed;
+                nextX += (dx/dist) * speed;
+                nextY += (dy/dist) * speed;
             } else {
-                state.playerX = state.targetX;
-                state.playerY = state.targetY;
+                nextX = state.targetX;
+                nextY = state.targetY;
                 state.targetX = null;
             }
         }
@@ -179,10 +181,44 @@ export class GameWorld {
         const logicalWidth = this.canvas.width / this.app.dpr;
         const logicalHeight = this.canvas.height / this.app.dpr;
 
-        state.playerX = Math.max(50, Math.min(logicalWidth - 50, state.playerX));
+        nextX = Math.max(50, Math.min(logicalWidth - 50, nextX));
         // Horizon is roughly 40% down the screen in the background image
         const horizon = logicalHeight * 0.4;
-        state.playerY = Math.max(horizon, Math.min(logicalHeight - 50, state.playerY));
+        nextY = Math.max(horizon, Math.min(logicalHeight - 50, nextY));
+
+        // Collision Check - Fountain
+        const fData = RoomData.fountain;
+        const fX = logicalWidth * fData.x;
+        const fY = logicalHeight * fData.y;
+        
+        if (fData.collisionPoly) {
+            // Transform poly to screen space
+            const poly = fData.collisionPoly.map(p => ({ x: fX + p.x, y: fY + p.y }));
+            
+            if (!this.pointInPoly(nextX, nextY, poly)) {
+                // No collision, apply movement
+                state.playerX = nextX;
+                state.playerY = nextY;
+            } else {
+                // Collision detected - stop movement
+                state.targetX = null; 
+            }
+        } else {
+            state.playerX = nextX;
+            state.playerY = nextY;
+        }
+    }
+
+    pointInPoly(x, y, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const xi = poly[i].x, yi = poly[i].y;
+            const xj = poly[j].x, yj = poly[j].y;
+            const intersect = ((yi > y) != (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
     }
 
     render() {
@@ -220,8 +256,8 @@ export class GameWorld {
         const fountainData = RoomData.fountain;
         const fountainX = logicalWidth * fountainData.x;
         const fountainY = logicalHeight * fountainData.y;
-        // Use defined clipY or default to center if undefined
-        const fountainClipY = logicalHeight * (fountainData.clipY !== undefined ? fountainData.clipY : fountainData.y);
+        // Z-clip: Use offset from center (fixed pixel value for consistency)
+        const fountainClipY = fountainY + (fountainData.clipOffset || 0);
         
         // Sort players by Y for depth
         const players = [];

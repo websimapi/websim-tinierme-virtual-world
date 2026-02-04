@@ -220,7 +220,8 @@ export class GameWorld {
         const fountainData = RoomData.fountain;
         const fountainX = logicalWidth * fountainData.x;
         const fountainY = logicalHeight * fountainData.y;
-        const fountainClipY = fountainY;
+        // Use defined clipY or default to center if undefined
+        const fountainClipY = logicalHeight * (fountainData.clipY !== undefined ? fountainData.clipY : fountainData.y);
         
         // Sort players by Y for depth
         const players = [];

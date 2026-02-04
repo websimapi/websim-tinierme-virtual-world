@@ -11,8 +11,8 @@ export const RoomData = {
         y: 0.5, // Center Y (0-1 normalized)
         width: 200,
         height: 150,
-        // Z-clip area: players behind if their Y > fountainY - height/2
-        clipY: 0.5 // Normalized Y threshold
+        // Z-clip area: normalized Y threshold where depth sorting switches
+        clipY: 0.55 
     }
 };
 

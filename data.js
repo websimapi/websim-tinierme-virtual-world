@@ -1,13 +1,62 @@
 export const RoomData = {
-    // New structure: Array of placed items
-    // This allows free positioning and layering order
+    // Default to the first preset
     defaultAvatar: {
         items: [
-             // Minimal start: Just face. User builds the rest.
-             { id: 'face_1', x: 0, y: 0 }
+            { id: 'hair_b_1', x: 0, y: 0, scale: 1 },
+            { id: 'face_1', x: 0, y: 0, scale: 1 },
+            { id: 'top_1', x: 0, y: 0, scale: 1 },
+            { id: 'hair_f_1', x: 0, y: 0, scale: 1 }
         ]
     }
 };
+
+export const CharacterPresets = [
+    {
+        name: "School Girl",
+        items: [
+            { id: 'hair_b_1', x: 0, y: 0, scale: 1 }, // Brown Long Back
+            { id: 'face_1', x: 0, y: 0, scale: 1 },   // Happy
+            { id: 'top_1', x: 0, y: 0, scale: 1 },    // Sailor
+            { id: 'hair_f_1', x: 0, y: 0, scale: 1 }  // Brown Bangs
+        ]
+    },
+    {
+        name: "Casual Boy",
+        items: [
+            { id: 'hair_b_2', x: 0, y: 0, scale: 1 }, // Pink Short Back (using as generic short)
+            { id: 'face_2', x: 0, y: 0, scale: 1 },   // Cool
+            { id: 'top_2', x: 0, y: 0, scale: 1 },    // T-shirt
+            { id: 'hair_f_1', x: 0, y: 0, scale: 1 }  // Brown Bangs
+        ]
+    },
+    {
+        name: "Pink Pop",
+        items: [
+            { id: 'hair_b_2', x: 0, y: 0, scale: 1 }, // Pink Short Back
+            { id: 'face_3', x: 0, y: 0, scale: 1 },   // Cute
+            { id: 'top_3', x: 0, y: 0, scale: 1 },    // Dress
+            { id: 'hair_f_2', x: 0, y: 0, scale: 1 }  // Pink Bangs
+        ]
+    },
+    {
+        name: "Street Style",
+        items: [
+            { id: 'hair_b_1', x: 0, y: 0, scale: 1 }, // Brown Long Back
+            { id: 'face_2', x: 0, y: 0, scale: 1 },   // Cool
+            { id: 'top_4', x: 0, y: 0, scale: 1 },    // Jacket
+            { id: 'hair_f_2', x: 0, y: 0, scale: 1 }  // Pink Bangs
+        ]
+    },
+    {
+        name: "Sleepy",
+        items: [
+            { id: 'hair_b_1', x: 0, y: 0, scale: 1 },
+            { id: 'face_4', x: 0, y: 0, scale: 1 },   // Sleepy
+            { id: 'top_2', x: 0, y: 0, scale: 1 },
+            { id: 'hair_f_1', x: 0, y: 0, scale: 1 }
+        ]
+    }
+];
 
 export const ItemDatabase = {
     // Assets are 2x2 grids. logical coordinates: col (0-1), row (0-1)
@@ -144,5 +193,10 @@ export const AvatarRenderer = {
              // Keep aspect ratio in preview, fit to box
              ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, ctx.canvas.width, ctx.canvas.height);
         }
+    },
+
+    renderAvatarPreview(ctx, avatarData) {
+        // Render a full avatar into a small context (usually square)
+        this.render(ctx, avatarData, ctx.canvas.width, ctx.canvas.height);
     }
 };

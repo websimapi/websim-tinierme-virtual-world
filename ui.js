@@ -1,4 +1,4 @@
-import { ItemDatabase, AvatarRenderer } from './data.js';
+import { ItemDatabase, CharacterPresets, AvatarRenderer } from './data.js';
 import { MinigameManager } from './minigames.js';
 
 export class UIManager {
@@ -151,100 +151,15 @@ export class UIManager {
         resizeCanvas();
 
         // --- Interaction Logic ---
-        let activeItemIndex = -1;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let initialItemX = 0;
-        let initialItemY = 0;
+        // Simplified: Clicking character spins them slightly or plays animation
+        // No drag and drop of individual parts as we are now using presets
         
-        const handleStart = (clientX, clientY) => {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            const tx = (clientX - rect.left) * dpr;
-            const ty = (clientY - rect.top) * dpr;
-            
-            // Check collision with items (Reverse order to grab top-most)
-            const items = this.app.state.currentAvatar.items;
-            activeItemIndex = -1;
-            
-            for (let i = items.length - 1; i >= 0; i--) {
-                const item = items[i];
-                // Simple hit box: The whole character square shifted by item.x/y
-                // But the item itself might be small. 
-                // Since sprites are full-size overlays (512x512 logic), the hit area is technically the whole box?
-                // To make it usable, we check if the click is somewhat near the center + offset.
-                // Or better: Just check distance to "center of item" which is canvasX + renderScale/2 + item.x
-                
-                const itemScale = item.scale || 1;
-                const drawSize = renderScale * itemScale;
-                const itemCenterX = canvasX + item.x + drawSize/2;
-                const itemCenterY = canvasY + item.y + drawSize/2;
-                
-                // Hit radius scaled to item size
-                const hitRadius = drawSize * 0.4; 
-                
-                if (Math.abs(tx - itemCenterX) < hitRadius && Math.abs(ty - itemCenterY) < hitRadius) {
-                    activeItemIndex = i;
-                    dragStartX = tx;
-                    dragStartY = ty;
-                    initialItemX = item.x;
-                    initialItemY = item.y;
-                    this.app.audio.play('pop.mp3');
-                    break;
-                }
-            }
-        };
-        
-        const handleMove = (clientX, clientY) => {
-            if (activeItemIndex === -1) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            const tx = (clientX - rect.left) * dpr;
-            const ty = (clientY - rect.top) * dpr;
-            
-            const dx = tx - dragStartX;
-            const dy = ty - dragStartY;
-            
-            const item = this.app.state.currentAvatar.items[activeItemIndex];
-            item.x = initialItemX + dx;
-            item.y = initialItemY + dy;
-        };
-        
-        const handleEnd = (clientX, clientY) => {
-            if (activeItemIndex === -1) return;
-            
-            // Check if dropped near bottom (Delete Zone)
-            const rect = canvas.getBoundingClientRect();
-            // If touch is in the bottom 15% of the canvas
-            if (clientY - rect.top > rect.height * 0.85) {
-                // Delete
-                this.app.state.currentAvatar.items.splice(activeItemIndex, 1);
-                this.app.audio.play('coin_get.mp3'); // Recycle sound
-            }
-            
-            activeItemIndex = -1;
+        const handleInteraction = () => {
+             this.app.audio.play('pop.mp3');
         };
 
-        // Mouse listeners
-        canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
-        window.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', e => handleEnd(e.clientX, e.clientY));
-        
-        // Touch listeners
-        canvas.addEventListener('touchstart', e => {
-            handleStart(e.touches[0].clientX, e.touches[0].clientY);
-            e.preventDefault();
-        }, {passive: false});
-        
-        canvas.addEventListener('touchmove', e => {
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
-            e.preventDefault();
-        }, {passive: false});
-        
-        canvas.addEventListener('touchend', e => {
-            handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-        });
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('touchstart', handleInteraction);
 
         // --- Render Loop ---
         const render = () => {
@@ -255,16 +170,6 @@ export class UIManager {
             }
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw Drag Hints (Delete Zone)
-            if (activeItemIndex !== -1) {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-                ctx.fillRect(0, canvas.height * 0.85, canvas.width, canvas.height * 0.15);
-                ctx.fillStyle = 'red';
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Drop here to remove', canvas.width/2, canvas.height * 0.93);
-            }
             
             ctx.save();
             ctx.translate(canvasX, canvasY);
@@ -282,56 +187,39 @@ export class UIManager {
         const container = document.getElementById('creator-options');
         container.innerHTML = '';
         
-        // Combine all items for simple scrolling
-        const allItems = [
-            ...ItemDatabase.face,
-            ...ItemDatabase.hair,
-            ...ItemDatabase.clothes
-        ];
-        
-        allItems.forEach(item => {
+        CharacterPresets.forEach(preset => {
             const el = document.createElement('div');
             el.className = 'item-option';
             
             const cvs = document.createElement('canvas');
-            cvs.width = 64; 
-            cvs.height = 64;
+            cvs.width = 80; 
+            cvs.height = 80;
             const c = cvs.getContext('2d');
-            AvatarRenderer.renderItemPreview(c, item);
+            
+            // We need to wait for assets to be ready if they aren't, 
+            // but since this is called after init, they should be there.
+            // Small timeout to ensure context is ready if needed, 
+            // but synchronous draw is preferred for UI.
+            AvatarRenderer.renderAvatarPreview(c, preset);
+            
             el.appendChild(cvs);
             
+            // Add label?
+            // const label = document.createElement('span');
+            // label.textContent = preset.name;
+            // label.style.fontSize = '10px';
+            // label.style.position = 'absolute';
+            // label.style.bottom = '2px';
+            // el.appendChild(label);
+            
             el.onclick = () => {
-                // Add item to scene (centered)
                 if (this.app.audio) this.app.audio.play('pop.mp3');
                 
-                if (!this.app.state.currentAvatar.items) {
-                    this.app.state.currentAvatar.items = [];
-                }
-
-                // Default scale logic
-                let scale = 1;
-                let offsetX = 0;
-                let offsetY = 0;
-
-                // Scale down faces/features as requested
-                if (item.type === 'face') {
-                    scale = 0.5;
-                    // Attempt to center (Approximation since we don't have exact render dimensions here)
-                    // Users can drag to fix position
-                    offsetX = 50 + (Math.random() - 0.5) * 20;
-                    offsetY = 50 + (Math.random() - 0.5) * 20;
-                } else {
-                    const offset = (Math.random() - 0.5) * 20;
-                    offsetX = offset;
-                    offsetY = offset;
-                }
-
-                this.app.state.currentAvatar.items.push({
-                    id: item.id,
-                    x: offsetX,
-                    y: offsetY,
-                    scale: scale
-                });
+                // Deep copy the preset items to current avatar
+                // This replaces the whole look
+                this.app.state.currentAvatar = JSON.parse(JSON.stringify({
+                    items: preset.items
+                }));
             };
             
             container.appendChild(el);

@@ -61,7 +61,7 @@ export class GameWorld {
                                // Remap inputs for 90deg rotation
                                // Physical Right (+X) -> Game Up (-Y)
                                // Physical Down (+Y) -> Game Right (+X)
-                               this.app.state.input.x = -data.vector.y; 
+                               this.app.state.input.x = data.vector.y; 
                                this.app.state.input.y = -data.vector.x;
                            } else {
                                this.app.state.input.x = data.vector.x;
@@ -92,8 +92,27 @@ export class GameWorld {
         const rect = this.canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
+        
+        // Calculate base coordinates relative to the bounding box
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
+
+        // Correct for Forced Landscape (Portrait Mode)
+        // If the screen is physically portrait, we rotate the app 90deg.
+        // We need to map the physical touch coordinates to the rotated game space.
+        if (window.innerHeight > window.innerWidth) {
+            const pX = x; // Physical X
+            const pY = y; // Physical Y
+            const logicalH = this.canvas.height / (this.app.dpr || 1);
+
+            // Mapping derivation:
+            // Physical Top-Left (0,0) -> Game Bottom-Left (0, H) [Visual Top-Left]
+            // Physical Right (+X) -> Game Up (-Y)
+            // Physical Down (+Y) -> Game Right (+X)
+            
+            x = pY;
+            y = logicalH - pX;
+        }
         
         this.app.state.targetX = x;
         this.app.state.targetY = y;

@@ -60,14 +60,9 @@ const App = {
         
         document.getElementById('loading-screen').classList.remove('active');
         
-        if (this.state.isFirstTime) {
-            this.ui.enterCreator();
-        } else {
-            this.ui.showScreen('start-screen');
-            // Render intro avatar
-            const introCanvas = document.getElementById('intro-avatar-canvas');
-            AvatarRenderer.render(introCanvas.getContext('2d'), this.state.currentAvatar, 300, 400);
-        }
+        // Always enter creator first (Combined Title/Creator Screen)
+        // This ensures the user sees the character immediately as requested
+        this.ui.enterCreator();
         
         // Play BGM on first interaction
         window.addEventListener('click', () => {

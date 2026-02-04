@@ -3,10 +3,8 @@ export const RoomData = {
     // This allows free positioning and layering order
     defaultAvatar: {
         items: [
-             { id: 'hair_b_1', x: 0, y: 0 },
-             { id: 'face_1', x: 0, y: 0 },
-             { id: 'top_1', x: 0, y: 0 },
-             { id: 'hair_f_1', x: 0, y: 0 }
+             // Minimal start: Just face. User builds the rest.
+             { id: 'face_1', x: 0, y: 0 }
         ]
     }
 };

@@ -291,11 +291,18 @@ export class UIManager {
             
             el.onclick = () => {
                 // Add item to scene (centered)
-                this.app.audio.play('pop.mp3');
+                if (this.app.audio) this.app.audio.play('pop.mp3');
+                
+                if (!this.app.state.currentAvatar.items) {
+                    this.app.state.currentAvatar.items = [];
+                }
+
+                // Add with slight random offset so they don't stack perfectly invisibly
+                const offset = (Math.random() - 0.5) * 20;
                 this.app.state.currentAvatar.items.push({
                     id: item.id,
-                    x: 0,
-                    y: 0
+                    x: offset,
+                    y: offset
                 });
             };
             

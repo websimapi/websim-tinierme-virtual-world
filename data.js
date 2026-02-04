@@ -2,7 +2,12 @@ export const RoomData = {
     // New structure: Array of placed items
     // This allows free positioning and layering order
     defaultAvatar: {
-        items: [] // Empty start, let user add base items? Or pre-populate.
+        items: [
+             { id: 'hair_b_1', x: 0, y: 0 },
+             { id: 'face_1', x: 0, y: 0 },
+             { id: 'top_1', x: 0, y: 0 },
+             { id: 'hair_f_1', x: 0, y: 0 }
+        ]
     }
 };
 
@@ -53,42 +58,75 @@ export const AvatarRenderer = {
         // avatarData is now expected to be { items: [{id, x, y, scale}] }
         
         ctx.save();
+
+        // Prepare layers
+        const layers = {
+            back: [],
+            body: ['base_char.png'],
+            face: [],
+            clothes: [],
+            front: [],
+            other: []
+        };
         
-        // 1. Draw Base Body (Always centered, fill fit)
-        if (this.assets['base_char.png']) {
-            ctx.drawImage(this.assets['base_char.png'], 0, 0, width, height);
-        }
-        
-        // 2. Draw Items
+        // Sort items into layers
         if (avatarData && Array.isArray(avatarData.items)) {
             avatarData.items.forEach(placedItem => {
                 const itemDef = ItemDatabase.getItem(placedItem.id);
                 if (!itemDef) return;
                 
-                const img = this.assets[itemDef.sprite.sheet];
-                if (img) {
-                    const srcW = img.naturalWidth / 2;
-                    const srcH = img.naturalHeight / 2;
-                    const srcX = itemDef.sprite.col * srcW;
-                    const srcY = itemDef.sprite.row * srcH;
-                    
-                    // Logic: Items are stickers.
-                    // Default placedItem.x/y is relative to center of canvas
-                    // width/height is the canvas size
-                    
-                    const offsetX = placedItem.x || 0;
-                    const offsetY = placedItem.y || 0;
-                    
-                    // Draw full size overlaid on body
-                    // We simply shift the draw rect by the offset
-                    ctx.drawImage(
-                        img, 
-                        srcX, srcY, srcW, srcH,
-                        offsetX, offsetY, width, height
-                    );
-                }
+                // Attach definition to placed item for rendering
+                const renderable = { ...placedItem, def: itemDef };
+                
+                if (itemDef.layer === 'back') layers.back.push(renderable);
+                else if (itemDef.type === 'face') layers.face.push(renderable);
+                else if (itemDef.type === 'clothes') layers.clothes.push(renderable);
+                else if (itemDef.layer === 'front') layers.front.push(renderable);
+                else layers.other.push(renderable);
             });
         }
+
+        // Helper render function
+        const drawItem = (item) => {
+            const img = this.assets[item.def.sprite.sheet];
+            if (img) {
+                const srcW = img.naturalWidth / 2;
+                const srcH = img.naturalHeight / 2;
+                const srcX = item.def.sprite.col * srcW;
+                const srcY = item.def.sprite.row * srcH;
+                
+                const offsetX = item.x || 0;
+                const offsetY = item.y || 0;
+                
+                ctx.drawImage(
+                    img, 
+                    srcX, srcY, srcW, srcH,
+                    offsetX, offsetY, width, height
+                );
+            }
+        };
+
+        // Render Order
+        
+        // 1. Back Hair / Items
+        layers.back.forEach(drawItem);
+        
+        // 2. Base Body
+        if (this.assets['base_char.png']) {
+            ctx.drawImage(this.assets['base_char.png'], 0, 0, width, height);
+        }
+        
+        // 3. Face
+        layers.face.forEach(drawItem);
+        
+        // 4. Clothes
+        layers.clothes.forEach(drawItem);
+        
+        // 5. Front Hair / Items
+        layers.front.forEach(drawItem);
+        
+        // 6. Others
+        layers.other.forEach(drawItem);
         
         ctx.restore();
     },

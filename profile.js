@@ -27,7 +27,14 @@ export class ProfileManager {
         } else {
             this.userRecord = records[0];
             try {
-                this.app.state.currentAvatar = JSON.parse(this.userRecord.col1 || JSON.stringify(RoomData.defaultAvatar));
+                let avatarData = JSON.parse(this.userRecord.col1 || JSON.stringify(RoomData.defaultAvatar));
+                // Migration check: Ensure 'items' array exists
+                if (!avatarData || !Array.isArray(avatarData.items)) {
+                    console.log("Migrating legacy avatar data...");
+                    avatarData = JSON.parse(JSON.stringify(RoomData.defaultAvatar));
+                }
+                this.app.state.currentAvatar = avatarData;
+
                 const wallet = JSON.parse(this.userRecord.col2 || "[0]");
                 this.app.state.coins = wallet[0];
                 this.app.state.inventory = JSON.parse(this.userRecord.col3 || "[]");

@@ -85,11 +85,14 @@
                     <button class="nav-btn" data-target="room" title="My Room">🛏️</button>
                 </div>
                 
-                <div class="chat-container glass-panel">
-                    <div id="chat-history"></div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="Say something cute...">
-                        <button id="btn-send">Send</button>
+                <div class="chat-container glass-panel minimized" id="chat-container">
+                    <button id="btn-chat-toggle" class="chat-toggle-btn">💬</button>
+                    <div class="chat-content">
+                        <div id="chat-history"></div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="Say something cute...">
+                            <button id="btn-send">Send</button>
+                        </div>
                     </div>
                 </div>
             </div>

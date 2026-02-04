@@ -44,6 +44,14 @@ export class UIManager {
             if(e.key === 'Enter') this.sendChat();
         });
         
+        // Chat Toggle
+        const chatContainer = document.getElementById('chat-container');
+        document.getElementById('btn-chat-toggle').addEventListener('click', (e) => {
+            chatContainer.classList.toggle('minimized');
+            // When opening, focus input? Maybe not on mobile to prevent keyboard pop
+            e.stopPropagation(); // Prevent canvas click through
+        });
+        
         // Close Buttons
         document.querySelectorAll('.btn-close').forEach(btn => {
             btn.addEventListener('click', () => {

@@ -241,7 +241,7 @@ export class GameWorld {
     renderPlayer(player) {
         const x = player.x;
         const y = player.y;
-        const scale = 0.5; // Slightly larger for better mobile visibility
+        const scale = 0.25; // Compact size
         const w = 400 * scale; // Using standard base size
         const h = 400 * scale;
         

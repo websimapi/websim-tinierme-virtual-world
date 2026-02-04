@@ -10,6 +10,7 @@ export class GameWorld {
         this.joystick = null;
         this.running = false;
         this.lastSyncTime = 0;
+        this.chatBubbles = {};
         
         // Input handling
         this.canvas.addEventListener('mousedown', (e) => this.handleInputStart(e));
@@ -17,6 +18,13 @@ export class GameWorld {
         
         window.addEventListener('resize', () => this.resize());
         this.resize();
+    }
+
+    showChatBubble(id, msg) {
+        this.chatBubbles[id] = {
+            msg: msg,
+            time: Date.now()
+        };
     }
 
     resize() {
@@ -270,5 +278,87 @@ export class GameWorld {
         this.ctx.font = '12px Quicksand';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(player.username, x, y + 29);
+
+        // Chat Bubble
+        if (this.chatBubbles[player.id]) {
+            const bubble = this.chatBubbles[player.id];
+            if (Date.now() - bubble.time > 5000) {
+                delete this.chatBubbles[player.id];
+            } else {
+                this.renderChatBubble(x, y - h, bubble.msg);
+            }
+        }
+    }
+
+    renderChatBubble(x, y, text) {
+        const ctx = this.ctx;
+        const padding = 8;
+        const maxWidth = 180;
+        const lineHeight = 16;
+        
+        ctx.font = '12px "Quicksand", sans-serif';
+        
+        // Word wrap
+        const words = text.split(' ');
+        let line = '';
+        const lines = [];
+        
+        for(let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                lines.push(line);
+                line = words[n] + ' ';
+            } else {
+                line = testLine;
+            }
+        }
+        lines.push(line);
+        
+        // Measure widest line
+        let maxLineW = 0;
+        lines.forEach(l => maxLineW = Math.max(maxLineW, ctx.measureText(l).width));
+        
+        const finalW = Math.max(40, maxLineW + padding * 2);
+        const finalH = lines.length * lineHeight + padding * 2;
+        
+        const bx = x - finalW / 2;
+        const by = y - finalH - 15; // Above head
+        
+        // Draw Bubble
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.strokeStyle = '#e6e6fa';
+        ctx.lineWidth = 1;
+        
+        const r = 8;
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + finalW - r, by);
+        ctx.quadraticCurveTo(bx + finalW, by, bx + finalW, by + r);
+        ctx.lineTo(bx + finalW, by + finalH - r);
+        ctx.quadraticCurveTo(bx + finalW, by + finalH, bx + finalW - r, by + finalH);
+        // Arrow
+        ctx.lineTo(bx + finalW/2 + 5, by + finalH);
+        ctx.lineTo(bx + finalW/2, by + finalH + 6);
+        ctx.lineTo(bx + finalW/2 - 5, by + finalH);
+        ctx.lineTo(bx + r, by + finalH);
+        ctx.quadraticCurveTo(bx, by + finalH, bx, by + finalH - r);
+        ctx.lineTo(bx, by + r);
+        ctx.quadraticCurveTo(bx, by, bx + r, by);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0; // Reset shadow
+        
+        // Text
+        ctx.fillStyle = '#4B0082';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], bx + finalW/2, by + padding + (i * lineHeight));
+        }
     }
 }

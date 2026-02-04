@@ -17,6 +17,9 @@ export class NetworkManager {
             const data = e.data;
             if (data.type === 'chat') {
                 this.app.ui.addChatMessage(data.username, data.message);
+                if (this.app.game) {
+                    this.app.game.showChatBubble(e.clientId, data.message);
+                }
             }
         };
     }

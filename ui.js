@@ -197,6 +197,7 @@ export class UIManager {
         const text = input.value.trim();
         if (text) {
             this.app.network.sendChat(text);
+            this.app.game.showChatBubble('me', text);
             input.value = '';
         }
     }

@@ -64,8 +64,13 @@ const App = {
     },
     
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = window.innerWidth * dpr;
+        this.canvas.height = window.innerHeight * dpr;
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
+        this.ctx.scale(dpr, dpr);
+        this.dpr = dpr;
     },
     
     async loadAssets() {
@@ -242,6 +247,9 @@ const App = {
     
     handleInputStart(e) {
         if (this.state.screen !== 'town-screen') return;
+        // Don't move if touching a UI element (heuristic: if target is canvas)
+        if (e.target !== this.canvas) return;
+
         const rect = this.canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -315,19 +323,37 @@ const App = {
             }
         }
         
-        // Bounds
-        this.state.playerX = Math.max(0, Math.min(this.canvas.width, this.state.playerX));
-        this.state.playerY = Math.max(200, Math.min(this.canvas.height, this.state.playerY)); // Keep below horizon
+        // Bounds (Logical width is window.innerWidth)
+        const logicalWidth = this.canvas.width / this.dpr;
+        const logicalHeight = this.canvas.height / this.dpr;
+
+        this.state.playerX = Math.max(0, Math.min(logicalWidth, this.state.playerX));
+        this.state.playerY = Math.max(200, Math.min(logicalHeight, this.state.playerY)); // Keep below horizon
         
         // Render
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, logicalWidth, logicalHeight);
         
         // Background
         if (this.assets['town_bg.png']) {
-            // Parallax-ish
-            const bgRatio = this.canvas.width / this.assets['town_bg.png'].width;
-            const h = this.assets['town_bg.png'].height * bgRatio;
-            this.ctx.drawImage(this.assets['town_bg.png'], 0, 0, this.canvas.width, this.canvas.height);
+            // Draw background cover
+            const img = this.assets['town_bg.png'];
+            const aspect = img.width / img.height;
+            const screenAspect = logicalWidth / logicalHeight;
+            
+            let dw, dh, dx, dy;
+            if (screenAspect > aspect) {
+                dw = logicalWidth;
+                dh = logicalWidth / aspect;
+                dx = 0;
+                dy = (logicalHeight - dh) / 2;
+            } else {
+                dh = logicalHeight;
+                dw = logicalHeight * aspect;
+                dx = (logicalWidth - dw) / 2;
+                dy = 0;
+            }
+            
+            this.ctx.drawImage(img, dx, dy, dw, dh);
         }
         
         // Sort players by Y for depth
@@ -361,8 +387,12 @@ const App = {
             this.renderPlayerInTown(p);
         });
         
-        // Sync Presence periodically (every 10 frames or so, to save bandwidth, but simple check is enough)
-        if (Math.random() < 0.1) this.updatePresence();
+        // Network Sync Throttling
+        const now = Date.now();
+        if (!this.lastSyncTime || now - this.lastSyncTime > 100) { // 100ms throttle (10fps sync)
+            this.updatePresence();
+            this.lastSyncTime = now;
+        }
 
         requestAnimationFrame(() => this.townLoop());
     },
@@ -370,8 +400,8 @@ const App = {
     renderPlayerInTown(player) {
         const x = player.x;
         const y = player.y;
-        const scale = 0.4;
-        const w = 300 * scale;
+        const scale = 0.5; // Slightly larger for better mobile visibility
+        const w = 400 * scale; // Using standard base size
         const h = 400 * scale;
         
         // Shadow

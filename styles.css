@@ -141,6 +141,15 @@ button {
     height: 100%;
 }
 
+#joystick-zone {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    z-index: 20;
+}
+
 .ui-hud {
     position: absolute;
     bottom: 0;
@@ -188,6 +197,9 @@ button {
 .nav-btn:hover {
     transform: translateY(-2px);
     background: #fff;
+}
+.nav-btn:active {
+    transform: scale(0.9);
 }
 
 .chat-container {
@@ -249,6 +261,30 @@ button {
     height: 500px;
     display: flex;
     flex-direction: column;
+}
+
+@media (max-width: 768px) {
+    .creator-layout {
+        flex-direction: column;
+        padding-top: 60px; /* Space for top overlap if needed */
+    }
+    .creator-controls {
+        width: 100%;
+        height: auto;
+        flex: 1;
+        max-height: 50%;
+    }
+    .avatar-display {
+        height: 40%;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        background: rgba(255,255,255,0.3);
+    }
+    .avatar-display canvas {
+        height: 100% !important;
+        width: auto !important;
+    }
 }
 
 .tabs {

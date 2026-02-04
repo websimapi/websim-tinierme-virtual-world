@@ -49,78 +49,60 @@ export const AvatarRenderer = {
     },
     
     render(ctx, avatarData, width, height) {
-        // Clear
-        // ctx.clearRect(0, 0, width, height); // Do not clear if drawing on top of scene
+        // Updated for Square assets (512x512 logical size)
+        // We draw everything to fill the target width/height, assuming they are compatible layers
         
-        const scaleX = width / 400; // Reference width 400
-        const scaleY = height / 500; // Reference height 500
+        // ctx.clearRect(0, 0, width, height); // Managed by caller
         
         ctx.save();
-        ctx.scale(scaleX, scaleY);
         
-        // 1. Back Hair
-        // For simplicity, we assume one "hair" ID controls both front/back or we select them separately.
-        // The data says 'hair' is one field. I'll split it or just render a default back if hair set.
-        // Actually, let's just pick a back hair that matches the front style or randomize for MVP.
-        // Let's assume user picks 'hair' which is the front part, and we auto-pick back for now.
-        // Improved: Allow avatarData to have hair_back specifically.
-        
-        const backHair = ItemDatabase.hair.find(h => h.layer === 'back'); // Default
-        if (backHair) this.drawItem(ctx, backHair);
-
-        // 2. Base Body
+        // Base Layer: Body
         if (this.assets['base_char.png']) {
-            ctx.drawImage(this.assets['base_char.png'], 0, 0, 400, 500);
+            ctx.drawImage(this.assets['base_char.png'], 0, 0, width, height);
         }
         
-        // 3. Face
-        const face = ItemDatabase.getItem(avatarData.face);
-        if (face) this.drawItem(ctx, face);
+        // Helper to draw layer
+        const drawLayer = (itemId) => {
+            const item = ItemDatabase.getItem(itemId);
+            if (!item) return;
+            const img = this.assets[item.sprite.sheet];
+            if (img) {
+                // Draw the specific sprite cell stretched to fit the entire avatar box
+                // This assumes the assets were generated as "paper doll" layers where the item is 
+                // pre-positioned relative to the frame.
+                ctx.drawImage(
+                    img, 
+                    item.sprite.x, item.sprite.y, item.sprite.w, item.sprite.h, // Source
+                    0, 0, width, height // Dest (Full fit)
+                );
+            }
+        };
+
+        // 1. Back Hair (Try to find a matching back hair or default)
+        // Simple logic: if wearing front hair 'hair_f_1', wear 'hair_b_1' etc.
+        // Or just store it in data. For now, we hack a default back hair for depth.
+        // We'll just look for any item with layer 'back' that matches the color of the front hair?
+        // For MVP: Just draw a specific back hair if defined in avatarData, else nothing.
+        // But to make it look good, let's force a back hair if one isn't set, based on the front hair index.
         
-        // 4. Clothes
-        const clothes = ItemDatabase.getItem(avatarData.clothes);
-        if (clothes) this.drawItem(ctx, clothes);
+        let backHairId = null;
+        if (avatarData.hair) {
+             // Heuristic: map hair_f_1 -> hair_b_1
+             const baseId = avatarData.hair.replace('f', 'b');
+             if (ItemDatabase.getItem(baseId)) backHairId = baseId;
+        }
+        if (backHairId) drawLayer(backHairId);
+
+        // 2. Face
+        drawLayer(avatarData.face);
         
-        // 5. Front Hair
-        const hair = ItemDatabase.getItem(avatarData.hair);
-        if (hair) this.drawItem(ctx, hair);
+        // 3. Clothes
+        drawLayer(avatarData.clothes);
+        
+        // 4. Front Hair
+        drawLayer(avatarData.hair);
         
         ctx.restore();
-    },
-    
-    drawItem(ctx, item) {
-        const img = this.assets[item.sprite.sheet];
-        if (img) {
-            // Draw full image from sprite sheet to full canvas
-            // The assets are pre-positioned in the 512x512 sprite blocks to match the 400x500 body?
-            // Assuming the sprite sheets are grids of items that are CENTRED relative to body.
-            // We need to map sprite coord to canvas.
-            
-            // Source
-            const sx = item.sprite.x;
-            const sy = item.sprite.y;
-            const sw = item.sprite.w;
-            const sh = item.sprite.h;
-            
-            // Dest
-            // Assuming the sprites are designed to fit the 400x500 body when scaled.
-            // If sprite blocks are 256x256, we stretch them to fit? Or place them on head/body?
-            // "clothes_starter.png" is "Square". Body is "Portrait".
-            // Let's assume the sprite contains the item centered.
-            // We draw it at appropriate position.
-            
-            let dx = 0, dy = 0, dw = 400, dh = 400; // Clothes usually full body width
-            
-            if (item.type === 'face') {
-                dx = 100; dy = 100; dw = 200; dh = 200; // Face is smaller
-            } else if (item.type === 'hair') {
-                 dx = 50; dy = 50; dw = 300; dh = 300; // Hair covers head
-            } else {
-                 dx = 50; dy = 150; dw = 300; dh = 300; // Clothes
-            }
-
-            ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-        }
     },
     
     renderItemPreview(ctx, item) {

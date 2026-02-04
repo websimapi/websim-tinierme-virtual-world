@@ -295,6 +295,13 @@ export class UIManager {
         element.addEventListener('touchstart', onTouchStart, {passive: false});
         element.addEventListener('touchmove', onTouchMove, {passive: false});
         element.addEventListener('touchend', onTouchEnd);
+        element.addEventListener('touchcancel', (e) => {
+            if (ghost) {
+                ghost.remove();
+                ghost = null;
+            }
+            isDragging = false;
+        });
     }
 
     enterGacha() {

@@ -292,13 +292,18 @@ button {
         flex-direction: column;
         gap: 0;
         padding: 0;
+        height: 100%; /* Ensure it fits screen */
+        overflow: hidden;
     }
     
     .avatar-display {
-        flex: 1; /* Fills remaining space */
+        flex: 1; 
         width: 100%;
         border-radius: 0;
-        padding-bottom: 20px; /* Space for character shadow */
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .creator-controls {

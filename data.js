@@ -83,29 +83,24 @@ export const AvatarRenderer = {
             }
         };
 
-        // 1. Back Hair (Try to find a matching back hair or default)
-        // Simple logic: if wearing front hair 'hair_f_1', wear 'hair_b_1' etc.
-        // Or just store it in data. For now, we hack a default back hair for depth.
-        // We'll just look for any item with layer 'back' that matches the color of the front hair?
-        // For MVP: Just draw a specific back hair if defined in avatarData, else nothing.
-        // But to make it look good, let's force a back hair if one isn't set, based on the front hair index.
-        
+        // 1. Back Hair (DISABLED FOR DIAGNOSIS)
+        /*
         let backHairId = null;
         if (avatarData.hair) {
-             // Heuristic: map hair_f_1 -> hair_b_1
              const baseId = avatarData.hair.replace('f', 'b');
              if (ItemDatabase.getItem(baseId)) backHairId = baseId;
         }
         if (backHairId) drawLayer(backHairId);
+        */
 
-        // 2. Face
-        drawLayer(avatarData.face);
+        // 2. Face (DISABLED FOR DIAGNOSIS)
+        // drawLayer(avatarData.face);
         
-        // 3. Clothes
-        drawLayer(avatarData.clothes);
+        // 3. Clothes (DISABLED FOR DIAGNOSIS)
+        // drawLayer(avatarData.clothes);
         
-        // 4. Front Hair
-        drawLayer(avatarData.hair);
+        // 4. Front Hair (DISABLED FOR DIAGNOSIS)
+        // drawLayer(avatarData.hair);
         
         ctx.restore();
     },

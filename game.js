@@ -87,7 +87,9 @@ export class GameWorld {
     handleInputStart(e) {
         if (this.app.state.screen !== 'town-screen') return;
         // Don't move if touching a UI element (heuristic: if target is canvas)
+        // Also explicitly check if clicking keyboard or chat
         if (e.target !== this.canvas) return;
+        if (e.target.closest('#virtual-keyboard') || e.target.closest('#chat-container')) return;
 
         const rect = this.canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -105,10 +107,10 @@ export class GameWorld {
             const pY = y; // Physical Y
             const logicalH = this.canvas.height / (this.app.dpr || 1);
 
-            // Mapping derivation:
-            // Physical Top-Left (0,0) -> Game Bottom-Left (0, H) [Visual Top-Left]
-            // Physical Right (+X) -> Game Up (-Y)
-            // Physical Down (+Y) -> Game Right (+X)
+            // Mapping derivation for rotate(90deg) [Clockwise]:
+            // Visual Top is Physical Right.
+            // Vis X (Left->Right) = Phy Y (Top->Bottom)
+            // Vis Y (Top->Bottom) = Phy Width - Phy X (Right->Left)
             
             x = pY;
             y = logicalH - pX;

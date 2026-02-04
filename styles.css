@@ -236,6 +236,12 @@ button {
     transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     position: relative;
     border: 1px solid rgba(255,255,255,0.3);
+    z-index: 60;
+}
+
+/* Move chat up when keyboard is open */
+.chat-container.keyboard-active {
+    transform: translateY(-220px);
 }
 
 .chat-container.minimized {
@@ -523,6 +529,74 @@ button {
     background: white;
     text-align: center;
     min-width: 300px;
+}
+
+/* Virtual Keyboard */
+#virtual-keyboard {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 220px;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    transition: transform 0.3s ease;
+}
+
+#virtual-keyboard.hidden {
+    transform: translateY(100%);
+    display: flex !important; /* Override generic hidden to keep layout for transition, just move it */
+}
+
+.kb-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+}
+
+.kb-key {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: var(--text);
+    font-weight: bold;
+    font-size: 1.2rem;
+    flex: 1;
+    max-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+    cursor: pointer;
+    user-select: none;
+}
+
+.kb-key:active {
+    transform: translateY(2px);
+    box-shadow: none;
+    background: #f0f0f0;
+}
+
+.kb-key.wide {
+    max-width: 60px;
+    font-size: 0.9rem;
+    background: #ffeef0;
+}
+
+.kb-key.space {
+    max-width: 200px;
+}
+
+.kb-key.action {
+    background: var(--primary);
+    color: white;
 }
 
 /* Force Landscape on Portrait Mobile */

@@ -39,11 +39,20 @@ export class UIManager {
         });
         
         // Chat
-        document.getElementById('btn-send').addEventListener('click', () => this.sendChat());
-        document.getElementById('chat-input').addEventListener('keyup', (e) => {
-            if(e.key === 'Enter') this.sendChat();
+        document.getElementById('btn-send').addEventListener('click', () => {
+            this.sendChat();
+            this.closeKeyboard();
         });
         
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('click', () => {
+             this.openKeyboard();
+        });
+        chatInput.addEventListener('focus', (e) => {
+             e.target.blur(); // Prevent native keyboard
+             this.openKeyboard();
+        });
+
         // Chat Toggle
         const chatContainer = document.getElementById('chat-container');
         document.getElementById('btn-chat-toggle').addEventListener('click', (e) => {
@@ -81,6 +90,84 @@ export class UIManager {
         document.getElementById('scroll-right').addEventListener('click', () => {
             scroller.scrollBy({ left: 100, behavior: 'smooth' });
         });
+
+        this.setupVirtualKeyboard();
+    }
+
+    setupVirtualKeyboard() {
+        const kb = document.getElementById('virtual-keyboard');
+        const rows = [
+            ['q','w','e','r','t','y','u','i','o','p'],
+            ['a','s','d','f','g','h','j','k','l'],
+            ['z','x','c','v','b','n','m'],
+            ['123', 'SPACE', 'DEL', 'ENTER']
+        ];
+
+        rows.forEach(rowKeys => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'kb-row';
+            
+            rowKeys.forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'kb-key';
+                
+                if (key === 'SPACE') {
+                    btn.classList.add('space');
+                    btn.textContent = '';
+                } else if (key === 'ENTER' || key === 'DEL' || key === '123') {
+                    btn.classList.add('wide');
+                    if(key === 'ENTER') btn.classList.add('action');
+                    btn.textContent = key;
+                } else {
+                    btn.textContent = key;
+                }
+
+                btn.onclick = (e) => {
+                    e.stopPropagation(); // Prevent game inputs
+                    this.handleKeyPress(key);
+                };
+                
+                rowDiv.appendChild(btn);
+            });
+            kb.appendChild(rowDiv);
+        });
+
+        // Close keyboard if clicking outside
+        document.getElementById('town-screen').addEventListener('mousedown', (e) => {
+            if (!kb.contains(e.target) && e.target.id !== 'chat-input') {
+                this.closeKeyboard();
+            }
+        });
+    }
+
+    openKeyboard() {
+        document.getElementById('virtual-keyboard').classList.remove('hidden');
+        document.getElementById('chat-container').classList.add('keyboard-active');
+        // Ensure chat is open
+        document.getElementById('chat-container').classList.remove('minimized');
+    }
+
+    closeKeyboard() {
+        document.getElementById('virtual-keyboard').classList.add('hidden');
+        document.getElementById('chat-container').classList.remove('keyboard-active');
+    }
+
+    handleKeyPress(key) {
+        const input = document.getElementById('chat-input');
+        if (this.app.audio) this.app.audio.play('pop.mp3');
+
+        if (key === 'DEL') {
+            input.value = input.value.slice(0, -1);
+        } else if (key === 'SPACE') {
+            input.value += ' ';
+        } else if (key === 'ENTER') {
+            this.sendChat();
+            this.closeKeyboard();
+        } else if (key === '123') {
+            // Placeholder for number switch
+        } else {
+            input.value += key;
+        }
     }
 
     showScreen(id) {

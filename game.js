@@ -1,5 +1,4 @@
 import { AvatarRenderer, RoomData } from './data.js';
-import nipplejs from 'nipplejs';
 
 export class GameWorld {
     constructor(app, room) {
@@ -7,7 +6,6 @@ export class GameWorld {
         this.room = room;
         this.canvas = document.getElementById('world-canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.joystick = null;
         this.running = false;
         this.lastSyncTime = 0;
         this.chatBubbles = {};
@@ -48,42 +46,6 @@ export class GameWorld {
         this.resize(); // Ensure size is correct on start
         if (!this.running) {
             this.running = true;
-            
-            // Force Joystick if touch device detected OR small screen
-            const isMobile = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 800;
-            
-            if (!this.joystick && isMobile) {
-                const zone = document.getElementById('joystick-zone');
-                if (zone) {
-                    zone.innerHTML = '';
-                    this.joystick = nipplejs.create({ 
-                        zone: zone, 
-                        mode: 'dynamic', 
-                        color: 'white',
-                        size: 100
-                    });
-                    this.joystick.on('move', (evt, data) => {
-                        if(data.vector) {
-                           // Check for forced landscape mode (screen is physically portrait)
-                           if (window.innerHeight > window.innerWidth) {
-                               // Remap inputs for 90deg rotation
-                               // Physical Right (+X) -> Game Up (-Y)
-                               // Physical Down (+Y) -> Game Right (+X)
-                               this.app.state.input.x = data.vector.y; 
-                               this.app.state.input.y = -data.vector.x;
-                           } else {
-                               this.app.state.input.x = data.vector.x;
-                               this.app.state.input.y = -data.vector.y;
-                           }
-                        }
-                    });
-                    this.joystick.on('end', () => {
-                        this.app.state.input.x = 0;
-                        this.app.state.input.y = 0;
-                    });
-                }
-            }
-
             requestAnimationFrame(() => this.loop());
         }
     }

@@ -159,15 +159,6 @@ button {
     height: 100%;
 }
 
-#joystick-zone {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    width: 150px;
-    height: 150px;
-    z-index: 20;
-}
-
 .ui-hud {
     position: absolute;
     bottom: 0;

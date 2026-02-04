@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TINIERME - Virtual World</title>
     <link rel="stylesheet" href="styles.css">
-    <script type="importmap">
-    {
-        "imports": {
-            "nipplejs": "https://esm.sh/nipplejs@0.10.1"
-        }
-    }
-    </script>
+
     <style>
         /* Force landscape on mobile for better view */
         @media screen and (orientation: portrait) and (max-width: 768px) {
@@ -68,7 +62,6 @@
         <div id="town-screen" class="screen">
             <div id="game-container">
                 <canvas id="world-canvas"></canvas>
-                <div id="joystick-zone"></div>
             </div>
             
             <!-- Virtual Keyboard (Inside town screen to respect rotation) -->

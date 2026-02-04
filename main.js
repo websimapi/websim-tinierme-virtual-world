@@ -73,7 +73,17 @@ const App = {
     },
     
     async loadAssets() {
-        const images = ['base_char.png', 'clothes_starter.png', 'features.png', 'hair_basic.png', 'town_bg.png', 'gacha_machine.png'];
+        // New asset list - removed base_char, clothes, etc. Added presets.
+        const images = [
+            'char_preset_1.png', 
+            'char_preset_2.png', 
+            'char_preset_3.png', 
+            'char_preset_4.png', 
+            'char_preset_5.png', 
+            'char_preset_6.png',
+            'town_bg.png', 
+            'gacha_machine.png'
+        ];
         const sounds = ['pop.mp3', 'coin_get.mp3', 'ui_sparkle.mp3', 'bgm_town.mp3'];
         
         const loadPromises = images.map(src => {
@@ -84,7 +94,10 @@ const App = {
                     this.assets[src] = img;
                     resolve();
                 };
-                img.onerror = reject;
+                img.onerror = () => {
+                    console.warn(`Failed to load ${src}`);
+                    resolve(); // Resolve anyway to not block app
+                };
             });
         });
         

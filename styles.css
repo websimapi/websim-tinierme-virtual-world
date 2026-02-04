@@ -249,9 +249,12 @@ button {
     gap: 20px;
     align-items: center;
     justify-content: center;
-    width: 95%;
-    height: 90%;
-    max-width: 1000px;
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
 .avatar-display {
@@ -260,62 +263,76 @@ button {
     align-items: center;
     justify-content: center;
     height: 100%;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, transparent 70%);
+    background: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 80%);
+    position: relative;
 }
 
 #creator-canvas {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    /* Drop shadow for the character */
-    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
 }
 
 .creator-controls {
-    flex: 1;
-    max-width: 400px;
+    flex: 0 0 400px;
     height: 100%;
-    max-height: 600px;
+    max-height: 800px;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 5;
 }
 
+/* Mobile Portrait Layout */
 @media (max-width: 768px) {
-    /* Mobile Portrait */
     .creator-layout {
         flex-direction: column;
-        gap: 10px;
-        height: 100%;
-        width: 100%;
-        padding: 10px;
+        gap: 0;
+        padding: 0;
     }
     
     .avatar-display {
-        flex: 0.8; /* Takes up less space than controls */
+        flex: 1; /* Fills remaining space */
         width: 100%;
-        min-height: 0; /* Flexbox trick */
+        border-radius: 0;
+        padding-bottom: 20px; /* Space for character shadow */
     }
     
     .creator-controls {
-        flex: 1.2;
+        flex: 0 0 45%; /* Bottom drawer */
         width: 100%;
         max-width: 100%;
-        height: auto;
-        min-height: 0;
+        border-radius: 25px 25px 0 0;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        padding: 15px;
+    }
+    
+    /* Adjust internal controls padding */
+    .tabs {
+        margin-bottom: 10px;
+    }
+    
+    .options-grid {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
+/* Mobile Landscape Layout */
 @media (max-width: 900px) and (orientation: landscape) {
-    /* Mobile Landscape */
     .creator-layout {
         flex-direction: row;
-    }
-    .avatar-display {
-        flex: 1;
+        padding: 10px;
+        gap: 10px;
     }
     .creator-controls {
         flex: 1;
+        height: 100%;
+    }
+    .options-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -346,20 +363,26 @@ button {
 .item-option {
     aspect-ratio: 1;
     background: white;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 2px solid #eee;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.1s, border-color 0.2s;
 }
 .item-option.selected {
     border-color: var(--primary);
     background: #fff0f5;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+.item-option:active {
+    transform: scale(0.95);
 }
 .item-option img, .item-option canvas {
-    max-width: 80%;
-    max-height: 80%;
+    max-width: 90%;
+    max-height: 90%;
+    pointer-events: none; /* Let clicks pass to container */
 }
 
 /* Gacha */

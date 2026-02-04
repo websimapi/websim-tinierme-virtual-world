@@ -115,25 +115,46 @@ export class UIManager {
     enterCreator() {
         this.showScreen('creator-screen');
         const canvas = document.getElementById('creator-canvas');
-        // Match resolution to display size for crispness
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
+        
+        // Resize observer to handle dynamic layout changes
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            // Avoid zero size
+            if (rect.width === 0 || rect.height === 0) return;
+            
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+        };
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial
         
         const ctx = canvas.getContext('2d');
         
         const render = () => {
-            if (this.app.state.screen !== 'creator-screen') return;
+            if (this.app.state.screen !== 'creator-screen') {
+                window.removeEventListener('resize', resizeCanvas);
+                return;
+            }
             
-            // Re-read size in case of resize
+            // Check if we need to resize (e.g. if layout shifted)
+            const rect = canvas.getBoundingClientRect();
+            if (canvas.width !== rect.width * window.devicePixelRatio) {
+                resizeCanvas();
+            }
+
             const w = canvas.width;
             const h = canvas.height;
             
             ctx.clearRect(0, 0, w, h);
             
-            // Keep aspect ratio of avatar (square-ish)
-            // Fit within canvas
-            const scale = Math.min(w, h);
+            // Draw character centered
+            // Leave some padding
+            const padding = 20;
+            const availableW = w - padding * 2;
+            const availableH = h - padding * 2;
+            
+            const scale = Math.min(availableW, availableH);
             const x = (w - scale) / 2;
             const y = (h - scale) / 2;
             
@@ -176,20 +197,104 @@ export class UIManager {
             
             // Render preview
             const cvs = document.createElement('canvas');
-            cvs.width = 60;
-            cvs.height = 60;
+            cvs.width = 80; // Slightly larger for drag visibility
+            cvs.height = 80;
             const c = cvs.getContext('2d');
             AvatarRenderer.renderItemPreview(c, item);
             
             el.appendChild(cvs);
+            
+            // Click to equip
             el.onclick = () => {
-                this.app.audio.play('pop.mp3');
-                this.app.state.currentAvatar[category] = item.id;
+                this.equipItem(category, item.id);
+                // Visual update
                 document.querySelectorAll('.item-option').forEach(x => x.classList.remove('selected'));
                 el.classList.add('selected');
             };
+
+            // Drag to equip
+            this.setupDrag(el, category, item);
+
             optionsContainer.appendChild(el);
         });
+    }
+
+    equipItem(category, itemId) {
+        this.app.audio.play('pop.mp3');
+        this.app.state.currentAvatar[category] = itemId;
+    }
+
+    setupDrag(element, category, item) {
+        let ghost = null;
+        let isDragging = false;
+        
+        const onTouchStart = (e) => {
+            isDragging = true;
+            // Create ghost
+            ghost = element.cloneNode(true);
+            ghost.style.position = 'fixed';
+            ghost.style.zIndex = '9999';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.opacity = '0.8';
+            ghost.style.transform = 'scale(1.2)';
+            ghost.style.width = element.offsetWidth + 'px';
+            ghost.style.height = element.offsetHeight + 'px';
+            ghost.classList.add('dragging');
+            
+            const touch = e.touches[0];
+            updateGhostPos(touch.clientX, touch.clientY);
+            
+            document.body.appendChild(ghost);
+            
+            // Prevent scrolling while dragging item
+            // e.preventDefault(); 
+        };
+        
+        const updateGhostPos = (x, y) => {
+            if (ghost) {
+                ghost.style.left = (x - ghost.offsetWidth / 2) + 'px';
+                ghost.style.top = (y - ghost.offsetHeight / 2) + 'px';
+            }
+        };
+        
+        const onTouchMove = (e) => {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            updateGhostPos(touch.clientX, touch.clientY);
+            e.preventDefault(); // Now prevent scroll
+        };
+        
+        const onTouchEnd = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const touch = e.changedTouches[0];
+            const x = touch.clientX;
+            const y = touch.clientY;
+            
+            // Check if dropped on canvas
+            const canvas = document.getElementById('creator-canvas');
+            const rect = canvas.getBoundingClientRect();
+            
+            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                // Success drop
+                this.equipItem(category, item.id);
+                this.app.audio.play('ui_sparkle.mp3'); // Special sound for drag equip
+                
+                // Update selection UI
+                document.querySelectorAll('.item-option').forEach(el => el.classList.remove('selected'));
+                element.classList.add('selected');
+            }
+            
+            if (ghost) {
+                ghost.remove();
+                ghost = null;
+            }
+        };
+        
+        element.addEventListener('touchstart', onTouchStart, {passive: false});
+        element.addEventListener('touchmove', onTouchMove, {passive: false});
+        element.addEventListener('touchend', onTouchEnd);
     }
 
     enterGacha() {

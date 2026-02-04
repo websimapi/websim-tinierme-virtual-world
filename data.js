@@ -7,23 +7,24 @@ export const RoomData = {
 };
 
 export const ItemDatabase = {
+    // Assets are 2x2 grids. logical coordinates: col (0-1), row (0-1)
     hair: [
-        { id: 'hair_f_1', name: 'Basic Bangs', type: 'hair', sprite: { sheet: 'hair_basic.png', x: 0, y: 0, w: 256, h: 256 }, layer: 'front' },
-        { id: 'hair_f_2', name: 'Side Swept', type: 'hair', sprite: { sheet: 'hair_basic.png', x: 256, y: 0, w: 256, h: 256 }, layer: 'front' },
-        { id: 'hair_b_1', name: 'Short Bob', type: 'hair', sprite: { sheet: 'hair_basic.png', x: 0, y: 256, w: 256, h: 256 }, layer: 'back' },
-        { id: 'hair_b_2', name: 'Long Flow', type: 'hair', sprite: { sheet: 'hair_basic.png', x: 256, y: 256, w: 256, h: 256 }, layer: 'back' }
+        { id: 'hair_f_1', name: 'Basic Bangs', type: 'hair', sprite: { sheet: 'hair_basic.png', col: 0, row: 0 }, layer: 'front' },
+        { id: 'hair_f_2', name: 'Side Swept', type: 'hair', sprite: { sheet: 'hair_basic.png', col: 1, row: 0 }, layer: 'front' },
+        { id: 'hair_b_1', name: 'Short Bob', type: 'hair', sprite: { sheet: 'hair_basic.png', col: 0, row: 1 }, layer: 'back' },
+        { id: 'hair_b_2', name: 'Long Flow', type: 'hair', sprite: { sheet: 'hair_basic.png', col: 1, row: 1 }, layer: 'back' }
     ],
     face: [
-        { id: 'face_1', name: 'Happy Eyes', type: 'face', sprite: { sheet: 'features.png', x: 0, y: 0, w: 256, h: 256 } },
-        { id: 'face_2', name: 'Cool Eyes', type: 'face', sprite: { sheet: 'features.png', x: 256, y: 0, w: 256, h: 256 } },
-        { id: 'face_3', name: 'Cute Eyes', type: 'face', sprite: { sheet: 'features.png', x: 0, y: 256, w: 256, h: 256 } },
-        { id: 'face_4', name: 'Sleepy Eyes', type: 'face', sprite: { sheet: 'features.png', x: 256, y: 256, w: 256, h: 256 } }
+        { id: 'face_1', name: 'Happy Eyes', type: 'face', sprite: { sheet: 'features.png', col: 0, row: 0 } },
+        { id: 'face_2', name: 'Cool Eyes', type: 'face', sprite: { sheet: 'features.png', col: 1, row: 0 } },
+        { id: 'face_3', name: 'Cute Eyes', type: 'face', sprite: { sheet: 'features.png', col: 0, row: 1 } },
+        { id: 'face_4', name: 'Sleepy Eyes', type: 'face', sprite: { sheet: 'features.png', col: 1, row: 1 } }
     ],
     clothes: [
-        { id: 'top_1', name: 'Sailor Top', type: 'clothes', sprite: { sheet: 'clothes_starter.png', x: 0, y: 0, w: 256, h: 256 } },
-        { id: 'top_2', name: 'Casual Tee', type: 'clothes', sprite: { sheet: 'clothes_starter.png', x: 256, y: 0, w: 256, h: 256 } },
-        { id: 'top_3', name: 'Dress', type: 'clothes', sprite: { sheet: 'clothes_starter.png', x: 0, y: 256, w: 256, h: 256 } },
-        { id: 'top_4', name: 'Jacket', type: 'clothes', sprite: { sheet: 'clothes_starter.png', x: 256, y: 256, w: 256, h: 256 } }
+        { id: 'top_1', name: 'Sailor Top', type: 'clothes', sprite: { sheet: 'clothes_starter.png', col: 0, row: 0 } },
+        { id: 'top_2', name: 'Casual Tee', type: 'clothes', sprite: { sheet: 'clothes_starter.png', col: 1, row: 0 } },
+        { id: 'top_3', name: 'Dress', type: 'clothes', sprite: { sheet: 'clothes_starter.png', col: 0, row: 1 } },
+        { id: 'top_4', name: 'Jacket', type: 'clothes', sprite: { sheet: 'clothes_starter.png', col: 1, row: 1 } }
     ],
     
     getItems(category) {
@@ -67,12 +68,16 @@ export const AvatarRenderer = {
             if (!item) return;
             const img = this.assets[item.sprite.sheet];
             if (img) {
-                // Draw the specific sprite cell stretched to fit the entire avatar box
-                // This assumes the assets were generated as "paper doll" layers where the item is 
-                // pre-positioned relative to the frame.
+                // Calculate dynamic source coordinates based on image size
+                // Assumption: 2x2 grid
+                const srcW = img.naturalWidth / 2;
+                const srcH = img.naturalHeight / 2;
+                const srcX = item.sprite.col * srcW;
+                const srcY = item.sprite.row * srcH;
+
                 ctx.drawImage(
                     img, 
-                    item.sprite.x, item.sprite.y, item.sprite.w, item.sprite.h, // Source
+                    srcX, srcY, srcW, srcH, // Source
                     0, 0, width, height // Dest (Full fit)
                 );
             }
@@ -106,10 +111,15 @@ export const AvatarRenderer = {
     },
     
     renderItemPreview(ctx, item) {
-        // Just draw the item centered in small box
         const img = this.assets[item.sprite.sheet];
         if (img) {
-             ctx.drawImage(img, item.sprite.x, item.sprite.y, item.sprite.w, item.sprite.h, 0, 0, ctx.canvas.width, ctx.canvas.height);
+             const srcW = img.naturalWidth / 2;
+             const srcH = img.naturalHeight / 2;
+             const srcX = item.sprite.col * srcW;
+             const srcY = item.sprite.row * srcH;
+             
+             // Keep aspect ratio in preview, fit to box
+             ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, ctx.canvas.width, ctx.canvas.height);
         }
     }
 };

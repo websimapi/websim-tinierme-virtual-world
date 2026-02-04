@@ -30,20 +30,27 @@ export class GameWorld {
     }
 
     start() {
+        this.resize(); // Ensure size is correct on start
         if (!this.running) {
             this.running = true;
             
-            // Init Joystick if mobile
-            if (!this.joystick && /Mobi|Android/i.test(navigator.userAgent)) {
+            // Force Joystick if touch device detected OR small screen
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 800;
+            
+            if (!this.joystick && isMobile) {
                 const zone = document.getElementById('joystick-zone');
                 if (zone) {
-                    // Cleanup old if exists (rare)
                     zone.innerHTML = '';
-                    this.joystick = nipplejs.create({ zone: zone, mode: 'dynamic', color: 'white' });
+                    this.joystick = nipplejs.create({ 
+                        zone: zone, 
+                        mode: 'dynamic', 
+                        color: 'white',
+                        size: 100
+                    });
                     this.joystick.on('move', (evt, data) => {
                         if(data.vector) {
                            this.app.state.input.x = data.vector.x;
-                           this.app.state.input.y = -data.vector.y; // nipple returns inverted Y
+                           this.app.state.input.y = -data.vector.y;
                         }
                     });
                     this.joystick.on('end', () => {
@@ -127,8 +134,10 @@ export class GameWorld {
         const logicalWidth = this.canvas.width / this.app.dpr;
         const logicalHeight = this.canvas.height / this.app.dpr;
 
-        state.playerX = Math.max(0, Math.min(logicalWidth, state.playerX));
-        state.playerY = Math.max(200, Math.min(logicalHeight, state.playerY)); // Keep below horizon
+        state.playerX = Math.max(50, Math.min(logicalWidth - 50, state.playerX));
+        // Horizon is roughly 40% down the screen in the background image
+        const horizon = logicalHeight * 0.4;
+        state.playerY = Math.max(horizon, Math.min(logicalHeight - 50, state.playerY));
     }
 
     render() {
@@ -137,26 +146,29 @@ export class GameWorld {
 
         this.ctx.clearRect(0, 0, logicalWidth, logicalHeight);
         
-        // Background
+        // Background - Cover Mode
         if (this.app.assets && this.app.assets['town_bg.png']) {
             const img = this.app.assets['town_bg.png'];
-            const aspect = img.width / img.height;
-            const screenAspect = logicalWidth / logicalHeight;
+            const imgRatio = img.width / img.height;
+            const canvasRatio = logicalWidth / logicalHeight;
             
-            let dw, dh, dx, dy;
-            if (screenAspect > aspect) {
-                dw = logicalWidth;
-                dh = logicalWidth / aspect;
-                dx = 0;
-                dy = (logicalHeight - dh) / 2;
+            let renderW, renderH, renderX, renderY;
+            
+            if (canvasRatio > imgRatio) {
+                // Canvas is wider than image (crop top/bottom)
+                renderW = logicalWidth;
+                renderH = logicalWidth / imgRatio;
+                renderX = 0;
+                renderY = (logicalHeight - renderH) / 2;
             } else {
-                dh = logicalHeight;
-                dw = logicalHeight * aspect;
-                dx = (logicalWidth - dw) / 2;
-                dy = 0;
+                // Canvas is taller than image (crop sides)
+                renderH = logicalHeight;
+                renderW = logicalHeight * imgRatio;
+                renderX = (logicalWidth - renderW) / 2;
+                renderY = 0;
             }
             
-            this.ctx.drawImage(img, dx, dy, dw, dh);
+            this.ctx.drawImage(img, renderX, renderY, renderW, renderH);
         }
         
         // Sort players by Y for depth

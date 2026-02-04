@@ -98,10 +98,16 @@ export class UIManager {
 
     enterTown() {
         this.showScreen('town-screen');
-        if (!this.app.state.playerX) {
-            this.app.state.playerX = 400;
-            this.app.state.playerY = 400;
+        
+        // Reset position if needed, center on screen
+        // Use logical coordinates roughly matching the 400px default
+        if (!this.app.state.playerX || this.app.state.playerX < 0) {
+            this.app.state.playerX = window.innerWidth / 2;
+            this.app.state.playerY = window.innerHeight * 0.7;
         }
+        
+        // Ensure engine is running
+        this.app.game.resize(); // Force resize check
         this.app.game.start();
         this.updateHUD();
     }
@@ -109,17 +115,36 @@ export class UIManager {
     enterCreator() {
         this.showScreen('creator-screen');
         const canvas = document.getElementById('creator-canvas');
+        // Match resolution to display size for crispness
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        
         const ctx = canvas.getContext('2d');
         
         const render = () => {
-            ctx.clearRect(0, 0, 400, 500);
-            AvatarRenderer.render(ctx, this.app.state.currentAvatar, 400, 500);
-            // Only continue if still in creator screen
-            if (this.app.state.screen === 'creator-screen') {
-                requestAnimationFrame(render);
-            }
+            if (this.app.state.screen !== 'creator-screen') return;
+            
+            // Re-read size in case of resize
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Keep aspect ratio of avatar (square-ish)
+            // Fit within canvas
+            const scale = Math.min(w, h);
+            const x = (w - scale) / 2;
+            const y = (h - scale) / 2;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            AvatarRenderer.render(ctx, this.app.state.currentAvatar, scale, scale);
+            ctx.restore();
+            
+            requestAnimationFrame(render);
         };
-        render();
+        requestAnimationFrame(render);
         
         this.bindCreatorTabs();
         this.loadCreatorTab('hair');

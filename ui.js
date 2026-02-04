@@ -1,0 +1,218 @@
+import { ItemDatabase, AvatarRenderer } from './data.js';
+import { MinigameManager } from './minigames.js';
+
+export class UIManager {
+    constructor(app) {
+        this.app = app;
+        this.setupBindings();
+    }
+
+    setupBindings() {
+        // Navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                if (target === 'town') this.enterTown();
+                else if (target === 'creator') this.enterCreator();
+                else if (target === 'gacha') this.enterGacha();
+                else if (target === 'arcade') this.enterArcade();
+                else if (target === 'room') this.showScreen('room-screen');
+                this.app.audio.play('pop.mp3');
+            });
+        });
+        
+        // Start Button
+        document.getElementById('btn-start').addEventListener('click', () => {
+            this.app.audio.play('pop.mp3');
+            this.enterTown();
+            // Start bgm loop
+            if (!this.app.bgmNode) {
+                this.app.bgmNode = this.app.audio.play('bgm_town.mp3', true);
+            }
+        });
+        
+        // Creator Save
+        document.getElementById('btn-save-avatar').addEventListener('click', async () => {
+            this.app.audio.play('ui_sparkle.mp3');
+            await this.app.profile.saveUserProfile();
+            this.enterTown();
+        });
+        
+        // Chat
+        document.getElementById('btn-send').addEventListener('click', () => this.sendChat());
+        document.getElementById('chat-input').addEventListener('keyup', (e) => {
+            if(e.key === 'Enter') this.sendChat();
+        });
+        
+        // Close Buttons
+        document.querySelectorAll('.btn-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.app.audio.play('pop.mp3');
+                this.enterTown();
+            });
+        });
+        
+        // Gacha
+        document.getElementById('btn-pull-gacha').addEventListener('click', () => this.pullGacha());
+        document.getElementById('btn-gacha-ok').addEventListener('click', () => {
+            document.getElementById('gacha-result').classList.add('hidden');
+        });
+
+        // Initialize Arcade Button
+        document.getElementById('btn-play-nugget').onclick = () => {
+            document.getElementById('arcade-menu').classList.add('hidden');
+            document.getElementById('minigame-container').classList.remove('hidden');
+            MinigameManager.startGame('nugget');
+        };
+    }
+
+    showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        this.app.state.screen = id;
+    }
+
+    updateHUD() {
+        document.getElementById('display-coins').textContent = this.app.state.coins;
+    }
+
+    addChatMessage(name, msg) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg';
+        div.innerHTML = `<span class="chat-name">${name}:</span> ${msg}`;
+        const history = document.getElementById('chat-history');
+        if (history) {
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+    }
+
+    sendChat() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (text) {
+            this.app.network.sendChat(text);
+            input.value = '';
+        }
+    }
+
+    enterTown() {
+        this.showScreen('town-screen');
+        if (!this.app.state.playerX) {
+            this.app.state.playerX = 400;
+            this.app.state.playerY = 400;
+        }
+        this.app.game.start();
+        this.updateHUD();
+    }
+
+    enterCreator() {
+        this.showScreen('creator-screen');
+        const canvas = document.getElementById('creator-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const render = () => {
+            ctx.clearRect(0, 0, 400, 500);
+            AvatarRenderer.render(ctx, this.app.state.currentAvatar, 400, 500);
+            // Only continue if still in creator screen
+            if (this.app.state.screen === 'creator-screen') {
+                requestAnimationFrame(render);
+            }
+        };
+        render();
+        
+        this.bindCreatorTabs();
+        this.loadCreatorTab('hair');
+    }
+
+    bindCreatorTabs() {
+        // Use cloning to reset listeners cleanly
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            const newTab = tab.cloneNode(true);
+            tab.parentNode.replaceChild(newTab, tab);
+            
+            newTab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+                newTab.classList.add('active');
+                this.loadCreatorTab(newTab.dataset.tab);
+            });
+        });
+    }
+
+    loadCreatorTab(category) {
+        const optionsContainer = document.getElementById('creator-options');
+        optionsContainer.innerHTML = '';
+        const items = ItemDatabase.getItems(category);
+        
+        items.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'item-option';
+            if (this.app.state.currentAvatar[category] === item.id) el.classList.add('selected');
+            
+            // Render preview
+            const cvs = document.createElement('canvas');
+            cvs.width = 60;
+            cvs.height = 60;
+            const c = cvs.getContext('2d');
+            AvatarRenderer.renderItemPreview(c, item);
+            
+            el.appendChild(cvs);
+            el.onclick = () => {
+                this.app.audio.play('pop.mp3');
+                this.app.state.currentAvatar[category] = item.id;
+                document.querySelectorAll('.item-option').forEach(x => x.classList.remove('selected'));
+                el.classList.add('selected');
+            };
+            optionsContainer.appendChild(el);
+        });
+    }
+
+    enterGacha() {
+        this.showScreen('gacha-screen');
+    }
+
+    async pullGacha() {
+        if (this.app.state.coins < 100) {
+            alert("Not enough Chibi Coins!");
+            return;
+        }
+        
+        this.app.state.coins -= 100;
+        this.updateHUD();
+        await this.app.profile.saveUserProfile();
+        this.app.audio.play('coin_get.mp3');
+        
+        // Animation
+        const machine = document.querySelector('.machine-container');
+        machine.style.animation = 'none';
+        machine.offsetHeight; /* trigger reflow */
+        machine.style.animation = 'pulse 0.5s infinite';
+        
+        setTimeout(async () => {
+            machine.style.animation = '';
+            // Get random item
+            const allItems = [...ItemDatabase.hair, ...ItemDatabase.clothes];
+            const item = allItems[Math.floor(Math.random() * allItems.length)];
+            
+            this.app.state.inventory.push(item.id);
+            await this.app.profile.saveUserProfile();
+            
+            const resultDiv = document.getElementById('gacha-result');
+            resultDiv.classList.remove('hidden');
+            document.getElementById('gacha-item-name').textContent = item.name;
+            
+            const cvs = document.getElementById('gacha-reveal-canvas');
+            const ctx = cvs.getContext('2d');
+            ctx.clearRect(0,0,100,100);
+            AvatarRenderer.renderItemPreview(ctx, item);
+            this.app.audio.play('ui_sparkle.mp3');
+            
+        }, 1500);
+    }
+    
+    enterArcade() {
+        this.showScreen('arcade-screen');
+        document.getElementById('arcade-menu').classList.remove('hidden');
+        document.getElementById('minigame-container').classList.add('hidden');
+    }
+}

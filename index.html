@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TINIERME - Virtual World</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "nipplejs": "https://esm.sh/nipplejs@0.10.1"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="screen active">
+            <div class="loader-content">
+                <h1 class="logo">TINIERME</h1>
+                <div class="loading-bar-container">
+                    <div class="loading-bar"></div>
+                </div>
+                <p id="loading-text">Sprinkling magic dust...</p>
+            </div>
+        </div>
+
+        <!-- Login / Start Screen -->
+        <div id="start-screen" class="screen">
+            <div class="start-content glass-panel">
+                <h1 class="logo">TINIERME</h1>
+                <p>Welcome to the cutest virtual world!</p>
+                <div class="avatar-preview-container">
+                    <canvas id="intro-avatar-canvas" width="300" height="400"></canvas>
+                </div>
+                <button id="btn-start" class="btn-primary pulse">Enter World</button>
+            </div>
+        </div>
+
+        <!-- Creator Screen -->
+        <div id="creator-screen" class="screen">
+            <div class="creator-layout">
+                <div class="avatar-display glass-panel">
+                    <canvas id="creator-canvas" width="400" height="500"></canvas>
+                </div>
+                <div class="creator-controls glass-panel">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="hair">Hair</button>
+                        <button class="tab-btn" data-tab="face">Face</button>
+                        <button class="tab-btn" data-tab="clothes">Clothes</button>
+                    </div>
+                    <div class="options-grid" id="creator-options">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="creator-actions">
+                        <button id="btn-save-avatar" class="btn-primary">Save & Play</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Town HUD / Main Game -->
+        <div id="town-screen" class="screen">
+            <div id="game-container">
+                <canvas id="world-canvas"></canvas>
+                <div id="joystick-zone"></div>
+            </div>
+            
+            <div class="ui-hud">
+                <div class="currency-badge glass-panel">
+                    <span class="coin-icon">🟡</span>
+                    <span id="display-coins">0</span> CC
+                </div>
+                
+                <div class="nav-bar glass-panel">
+                    <button class="nav-btn" data-target="town" title="Town">🏠</button>
+                    <button class="nav-btn" data-target="gacha" title="Gacha">🎰</button>
+                    <button class="nav-btn" data-target="arcade" title="Arcade">🎮</button>
+                    <button class="nav-btn" data-target="creator" title="Dress Up">👗</button>
+                    <button class="nav-btn" data-target="room" title="My Room">🛏️</button>
+                </div>
+                
+                <div class="chat-container glass-panel">
+                    <div id="chat-history"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Say something cute...">
+                        <button id="btn-send">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gacha Screen -->
+        <div id="gacha-screen" class="screen">
+            <button class="btn-close">✕</button>
+            <div class="gacha-center">
+                <div class="machine-container pulse">
+                    <img src="gacha_machine.png" alt="Gacha Machine" class="gacha-img">
+                </div>
+                <div class="gacha-controls glass-panel">
+                    <h2>Magical Gacha</h2>
+                    <p>Price: 100 CC</p>
+                    <button id="btn-pull-gacha" class="btn-primary">Pull x1</button>
+                    <div id="gacha-result" class="hidden">
+                        <div class="item-reveal">
+                            <canvas id="gacha-reveal-canvas" width="100" height="100"></canvas>
+                            <p id="gacha-item-name">Rare Item!</p>
+                        </div>
+                        <button id="btn-gacha-ok">Keep</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arcade Screen -->
+        <div id="arcade-screen" class="screen">
+            <button class="btn-close">✕</button>
+            <div class="arcade-menu glass-panel" id="arcade-menu">
+                <h2>Game Center</h2>
+                <div class="game-card" id="btn-play-nugget">
+                    <div class="game-icon">🍗</div>
+                    <h3>Nugget Catch</h3>
+                    <p>Catch falling nuggets!</p>
+                </div>
+            </div>
+            <div id="minigame-container" class="hidden">
+                <canvas id="minigame-canvas"></canvas>
+                <div class="minigame-ui">
+                    <span id="game-score">Score: 0</span>
+                    <span id="game-lives">Lives: 3</span>
+                    <button id="btn-exit-game">Exit</button>
+                </div>
+                <div id="game-over-modal" class="modal hidden">
+                    <div class="modal-content glass-panel">
+                        <h2>Game Over!</h2>
+                        <p>Score: <span id="final-score">0</span></p>
+                        <p>Earned: <span id="earned-coins">0</span> CC</p>
+                        <button id="btn-retry-game">Try Again</button>
+                        <button id="btn-quit-game">Back to Menu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Room Screen (Placeholder for MVP) -->
+        <div id="room-screen" class="screen">
+            <button class="btn-close">✕</button>
+            <div class="room-container glass-panel">
+                <h2>My Room</h2>
+                <p>Room decoration coming soon!</p>
+                <div class="room-view">
+                     <!-- Room Canvas would go here -->
+                     <div style="width: 100%; height: 300px; background: #ffeef0; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <span>(Empty Room)</span>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="main.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+:root {
+    --primary: #FFB6C1; /* Soft Pink */
+    --secondary: #87CEEB; /* Sky Blue */
+    --accent: #FFD700; /* Gold */
+    --text: #4B0082; /* Indigo */
+    --glass: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --font-main: "Quicksand", "Comic Sans MS", cursive, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    touch-action: none; /* Prevent default touch actions like scroll */
+}
+
+body {
+    font-family: var(--font-main);
+    background: linear-gradient(135deg, #fff0f5 0%, #e6e6fa 100%);
+    color: var(--text);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Screens */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Glass UI */
+.glass-panel {
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    padding: 20px;
+}
+
+/* Buttons */
+button {
+    font-family: var(--font-main);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+    outline: none;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary), #ff9eb5);
+    color: white;
+    padding: 12px 30px;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(255, 182, 193, 0.5);
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+}
+
+.btn-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    font-size: 1.2rem;
+    color: var(--primary);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+/* Loading Screen */
+#loading-screen {
+    background: #fff0f5;
+    z-index: 9999;
+}
+
+.loading-bar-container {
+    width: 200px;
+    height: 10px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 5px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.loading-bar {
+    width: 0%;
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s;
+}
+
+.logo {
+    font-size: 3rem;
+    background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Town HUD */
+#town-screen {
+    display: none; /* Initially hidden */
+}
+#game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#world-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.ui-hud {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Let clicks pass through to canvas */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+.currency-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    pointer-events: auto;
+}
+
+.nav-bar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 5px;
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+}
+
+.nav-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.nav-btn:hover {
+    transform: translateY(-2px);
+    background: #fff;
+}
+
+.chat-container {
+    pointer-events: auto;
+    width: 300px;
+    max-width: 90%;
+    height: 150px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255,255,255,0.7);
+}
+
+#chat-history {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    padding-bottom: 5px;
+    text-align: left;
+}
+.chat-msg {
+    margin-bottom: 4px;
+}
+.chat-name {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 5px;
+}
+#chat-input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Creator Screen */
+.creator-layout {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    height: 80%;
+}
+@media (max-width: 768px) {
+    .creator-layout {
+        flex-direction: column;
+    }
+    .creator-controls {
+        width: 100%;
+        height: 200px;
+    }
+}
+
+.creator-controls {
+    width: 300px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+.tab-btn {
+    flex: 1;
+    background: #fff;
+    padding: 8px;
+    font-size: 0.9rem;
+}
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.options-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    padding: 5px;
+}
+.item-option {
+    aspect-ratio: 1;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.item-option.selected {
+    border-color: var(--primary);
+    background: #fff0f5;
+}
+.item-option img, .item-option canvas {
+    max-width: 80%;
+    max-height: 80%;
+}
+
+/* Gacha */
+.gacha-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+.machine-container {
+    width: 200px;
+    height: 300px;
+}
+.gacha-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.gacha-controls {
+    text-align: center;
+    min-width: 300px;
+}
+
+/* Arcade */
+.game-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 150px;
+}
+.game-card:hover {
+    transform: translateY(-5px);
+}
+.game-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+#minigame-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+}
+#minigame-canvas {
+    width: 100%;
+    height: 100%;
+}
+.minigame-ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    color: white;
+    font-family: monospace;
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+}
+#btn-exit-game {
+    pointer-events: auto;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid white;
+    color: white;
+    padding: 5px 15px;
+}
+
+/* Utilities */
+.hidden { display: none !important; }
+.pulse { animation: pulse 2s infinite; }
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+.modal-content {
+    background: white;
+    text-align: center;
+    min-width: 300px;
+}

@@ -132,17 +132,21 @@ export class UIManager {
         let canvasY = 0;
         
         const resizeCanvas = () => {
-            const rect = canvas.getBoundingClientRect();
-            if (rect.width === 0) return;
+            // Use clientWidth/Height to respect CSS transforms/containers
+            const width = canvas.clientWidth || canvas.parentElement.clientWidth;
+            const height = canvas.clientHeight || canvas.parentElement.clientHeight;
+            
+            if (width === 0) return;
             
             // High DPI
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
             
             // Calculate drawing area (centered square)
             const padding = 40;
-            const size = Math.min(canvas.width, canvas.height) - padding;
+            // Use logical size (canvas.width is scaled by dpr)
+            const size = Math.min(canvas.width, canvas.height) - (padding * dpr);
             renderScale = size;
             canvasX = (canvas.width - size) / 2;
             canvasY = (canvas.height - size) / 2;

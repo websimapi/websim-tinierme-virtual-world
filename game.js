@@ -20,11 +20,18 @@ export class GameWorld {
     }
 
     resize() {
+        const parent = this.canvas.parentElement;
+        if (!parent) return;
+
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = window.innerWidth * dpr;
-        this.canvas.height = window.innerHeight * dpr;
-        this.canvas.style.width = window.innerWidth + 'px';
-        this.canvas.style.height = window.innerHeight + 'px';
+        // Use parent dimensions to support CSS-forced landscape
+        const w = parent.clientWidth;
+        const h = parent.clientHeight;
+        
+        this.canvas.width = w * dpr;
+        this.canvas.height = h * dpr;
+        this.canvas.style.width = w + 'px';
+        this.canvas.style.height = h + 'px';
         this.ctx.scale(dpr, dpr);
         this.app.dpr = dpr;
     }
@@ -49,8 +56,17 @@ export class GameWorld {
                     });
                     this.joystick.on('move', (evt, data) => {
                         if(data.vector) {
-                           this.app.state.input.x = data.vector.x;
-                           this.app.state.input.y = -data.vector.y;
+                           // Check for forced landscape mode (screen is physically portrait)
+                           if (window.innerHeight > window.innerWidth) {
+                               // Remap inputs for 90deg rotation
+                               // Physical Right (+X) -> Game Up (-Y)
+                               // Physical Down (+Y) -> Game Right (+X)
+                               this.app.state.input.x = -data.vector.y; 
+                               this.app.state.input.y = -data.vector.x;
+                           } else {
+                               this.app.state.input.x = data.vector.x;
+                               this.app.state.input.y = -data.vector.y;
+                           }
                         }
                     });
                     this.joystick.on('end', () => {

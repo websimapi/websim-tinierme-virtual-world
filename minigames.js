@@ -51,9 +51,20 @@ class NuggetGame {
         this.lastTime = 0;
         this.spawnTimer = 0;
         
-        // Resize observer? Just set once for now
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Initial resize
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+    }
+
+    resize() {
+        const parent = this.canvas.parentElement;
+        if (parent) {
+             this.canvas.width = parent.clientWidth;
+             this.canvas.height = parent.clientHeight;
+        } else {
+             this.canvas.width = window.innerWidth;
+             this.canvas.height = window.innerHeight;
+        }
     }
     
     start() {

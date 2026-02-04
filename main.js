@@ -81,7 +81,8 @@ const App = {
             'char_preset_4.png', 
             'char_preset_5.png', 
             'char_preset_6.png',
-            'town_bg.png', 
+            'town_bg.png',
+            'fountain.png',
             'gacha_machine.png'
         ];
         const sounds = ['pop.mp3', 'coin_get.mp3', 'ui_sparkle.mp3', 'bgm_town.mp3'];

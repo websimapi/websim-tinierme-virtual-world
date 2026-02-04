@@ -1,4 +1,4 @@
-import { AvatarRenderer } from './data.js';
+import { AvatarRenderer, RoomData } from './data.js';
 import nipplejs from 'nipplejs';
 
 export class GameWorld {
@@ -216,6 +216,12 @@ export class GameWorld {
             this.ctx.drawImage(img, renderX, renderY, renderW, renderH);
         }
         
+        // Calculate fountain position
+        const fountainData = RoomData.fountain;
+        const fountainX = logicalWidth * fountainData.x;
+        const fountainY = logicalHeight * fountainData.y;
+        const fountainClipY = fountainY;
+        
         // Sort players by Y for depth
         const players = [];
         // Add me
@@ -243,8 +249,26 @@ export class GameWorld {
         
         players.sort((a, b) => a.y - b.y);
         
+        // Render players behind fountain
         players.forEach(p => {
-            this.renderPlayer(p);
+            if (p.y < fountainClipY) {
+                this.renderPlayer(p);
+            }
+        });
+        
+        // Render fountain
+        if (this.app.assets && this.app.assets['fountain.png']) {
+            const fountainImg = this.app.assets['fountain.png'];
+            const fw = fountainData.width;
+            const fh = fountainData.height;
+            this.ctx.drawImage(fountainImg, fountainX - fw/2, fountainY - fh/2, fw, fh);
+        }
+        
+        // Render players in front of fountain
+        players.forEach(p => {
+            if (p.y >= fountainClipY) {
+                this.renderPlayer(p);
+            }
         });
     }
 

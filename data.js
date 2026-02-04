@@ -4,6 +4,15 @@ export const RoomData = {
         items: [
             { id: 'char_1' }
         ]
+    },
+    // Fountain positioning for Z-clipping
+    fountain: {
+        x: 0.5, // Center X (0-1 normalized)
+        y: 0.5, // Center Y (0-1 normalized)
+        width: 200,
+        height: 150,
+        // Z-clip area: players behind if their Y > fountainY - height/2
+        clipY: 0.5 // Normalized Y threshold
     }
 };
 

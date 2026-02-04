@@ -115,192 +115,191 @@ export class UIManager {
     enterCreator() {
         this.showScreen('creator-screen');
         const canvas = document.getElementById('creator-canvas');
-        
-        // Resize observer to handle dynamic layout changes
-        const resizeCanvas = () => {
-            const rect = canvas.getBoundingClientRect();
-            // Avoid zero size
-            if (rect.width === 0 || rect.height === 0) return;
-            
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
-        };
-        
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initial
-        
         const ctx = canvas.getContext('2d');
         
+        // --- Setup Canvas Size & Resize ---
+        let renderScale = 1;
+        let canvasX = 0;
+        let canvasY = 0;
+        
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0) return;
+            
+            // High DPI
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            // Calculate drawing area (centered square)
+            const padding = 40;
+            const size = Math.min(canvas.width, canvas.height) - padding;
+            renderScale = size;
+            canvasX = (canvas.width - size) / 2;
+            canvasY = (canvas.height - size) / 2;
+        };
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- Interaction Logic ---
+        let activeItemIndex = -1;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let initialItemX = 0;
+        let initialItemY = 0;
+        
+        const handleStart = (clientX, clientY) => {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const tx = (clientX - rect.left) * dpr;
+            const ty = (clientY - rect.top) * dpr;
+            
+            // Check collision with items (Reverse order to grab top-most)
+            const items = this.app.state.currentAvatar.items;
+            activeItemIndex = -1;
+            
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                // Simple hit box: The whole character square shifted by item.x/y
+                // But the item itself might be small. 
+                // Since sprites are full-size overlays (512x512 logic), the hit area is technically the whole box?
+                // To make it usable, we check if the click is somewhat near the center + offset.
+                // Or better: Just check distance to "center of item" which is canvasX + renderScale/2 + item.x
+                
+                const itemCenterX = canvasX + item.x + renderScale/2;
+                const itemCenterY = canvasY + item.y + renderScale/2;
+                
+                // Generous hit radius (e.g. 1/4 of total scale)
+                const hitRadius = renderScale * 0.3; 
+                
+                if (Math.abs(tx - itemCenterX) < hitRadius && Math.abs(ty - itemCenterY) < hitRadius) {
+                    activeItemIndex = i;
+                    dragStartX = tx;
+                    dragStartY = ty;
+                    initialItemX = item.x;
+                    initialItemY = item.y;
+                    this.app.audio.play('pop.mp3');
+                    break;
+                }
+            }
+        };
+        
+        const handleMove = (clientX, clientY) => {
+            if (activeItemIndex === -1) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const tx = (clientX - rect.left) * dpr;
+            const ty = (clientY - rect.top) * dpr;
+            
+            const dx = tx - dragStartX;
+            const dy = ty - dragStartY;
+            
+            const item = this.app.state.currentAvatar.items[activeItemIndex];
+            item.x = initialItemX + dx;
+            item.y = initialItemY + dy;
+        };
+        
+        const handleEnd = (clientX, clientY) => {
+            if (activeItemIndex === -1) return;
+            
+            // Check if dropped near bottom (Delete Zone)
+            const rect = canvas.getBoundingClientRect();
+            // If touch is in the bottom 15% of the canvas
+            if (clientY - rect.top > rect.height * 0.85) {
+                // Delete
+                this.app.state.currentAvatar.items.splice(activeItemIndex, 1);
+                this.app.audio.play('coin_get.mp3'); // Recycle sound
+            }
+            
+            activeItemIndex = -1;
+        };
+
+        // Mouse listeners
+        canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', e => handleEnd(e.clientX, e.clientY));
+        
+        // Touch listeners
+        canvas.addEventListener('touchstart', e => {
+            handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault();
+        }, {passive: false});
+        
+        canvas.addEventListener('touchmove', e => {
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault();
+        }, {passive: false});
+        
+        canvas.addEventListener('touchend', e => {
+            handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        });
+
+        // --- Render Loop ---
         const render = () => {
             if (this.app.state.screen !== 'creator-screen') {
                 window.removeEventListener('resize', resizeCanvas);
+                // Clean up listeners? (Lazy approach: they stay on DOM element, but logic guards state)
                 return;
             }
             
-            // Check if we need to resize (e.g. if layout shifted)
-            const rect = canvas.getBoundingClientRect();
-            if (canvas.width !== rect.width * window.devicePixelRatio) {
-                resizeCanvas();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Drag Hints (Delete Zone)
+            if (activeItemIndex !== -1) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                ctx.fillRect(0, canvas.height * 0.85, canvas.width, canvas.height * 0.15);
+                ctx.fillStyle = 'red';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Drop here to remove', canvas.width/2, canvas.height * 0.93);
             }
-
-            const w = canvas.width;
-            const h = canvas.height;
-            
-            ctx.clearRect(0, 0, w, h);
-            
-            // Draw character centered
-            // Leave some padding
-            const padding = 20;
-            const availableW = w - padding * 2;
-            const availableH = h - padding * 2;
-            
-            const scale = Math.min(availableW, availableH);
-            const x = (w - scale) / 2;
-            const y = (h - scale) / 2;
             
             ctx.save();
-            ctx.translate(x, y);
-            AvatarRenderer.render(ctx, this.app.state.currentAvatar, scale, scale);
+            ctx.translate(canvasX, canvasY);
+            AvatarRenderer.render(ctx, this.app.state.currentAvatar, renderScale, renderScale);
             ctx.restore();
             
             requestAnimationFrame(render);
         };
         requestAnimationFrame(render);
         
-        this.bindCreatorTabs();
-        this.loadCreatorTab('hair');
+        this.populateCreatorToolbar();
     }
 
-    bindCreatorTabs() {
-        // Use cloning to reset listeners cleanly
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
-            
-            newTab.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-                newTab.classList.add('active');
-                this.loadCreatorTab(newTab.dataset.tab);
-            });
-        });
-    }
-
-    loadCreatorTab(category) {
-        const optionsContainer = document.getElementById('creator-options');
-        optionsContainer.innerHTML = '';
-        const items = ItemDatabase.getItems(category);
+    populateCreatorToolbar() {
+        const container = document.getElementById('creator-options');
+        container.innerHTML = '';
         
-        items.forEach(item => {
+        // Combine all items for simple scrolling
+        const allItems = [
+            ...ItemDatabase.face,
+            ...ItemDatabase.hair,
+            ...ItemDatabase.clothes
+        ];
+        
+        allItems.forEach(item => {
             const el = document.createElement('div');
             el.className = 'item-option';
-            if (this.app.state.currentAvatar[category] === item.id) el.classList.add('selected');
             
-            // Render preview
             const cvs = document.createElement('canvas');
-            cvs.width = 80; // Slightly larger for drag visibility
-            cvs.height = 80;
+            cvs.width = 64; 
+            cvs.height = 64;
             const c = cvs.getContext('2d');
             AvatarRenderer.renderItemPreview(c, item);
-            
             el.appendChild(cvs);
             
-            // Click to equip
             el.onclick = () => {
-                this.equipItem(category, item.id);
-                // Visual update
-                document.querySelectorAll('.item-option').forEach(x => x.classList.remove('selected'));
-                el.classList.add('selected');
+                // Add item to scene (centered)
+                this.app.audio.play('pop.mp3');
+                this.app.state.currentAvatar.items.push({
+                    id: item.id,
+                    x: 0,
+                    y: 0
+                });
             };
-
-            // Drag to equip
-            this.setupDrag(el, category, item);
-
-            optionsContainer.appendChild(el);
-        });
-    }
-
-    equipItem(category, itemId) {
-        this.app.audio.play('pop.mp3');
-        this.app.state.currentAvatar[category] = itemId;
-    }
-
-    setupDrag(element, category, item) {
-        let ghost = null;
-        let isDragging = false;
-        
-        const onTouchStart = (e) => {
-            isDragging = true;
-            // Create ghost
-            ghost = element.cloneNode(true);
-            ghost.style.position = 'fixed';
-            ghost.style.zIndex = '9999';
-            ghost.style.pointerEvents = 'none';
-            ghost.style.opacity = '0.8';
-            ghost.style.transform = 'scale(1.2)';
-            ghost.style.width = element.offsetWidth + 'px';
-            ghost.style.height = element.offsetHeight + 'px';
-            ghost.classList.add('dragging');
             
-            const touch = e.touches[0];
-            updateGhostPos(touch.clientX, touch.clientY);
-            
-            document.body.appendChild(ghost);
-            
-            // Prevent scrolling while dragging item
-            // e.preventDefault(); 
-        };
-        
-        const updateGhostPos = (x, y) => {
-            if (ghost) {
-                ghost.style.left = (x - ghost.offsetWidth / 2) + 'px';
-                ghost.style.top = (y - ghost.offsetHeight / 2) + 'px';
-            }
-        };
-        
-        const onTouchMove = (e) => {
-            if (!isDragging) return;
-            const touch = e.touches[0];
-            updateGhostPos(touch.clientX, touch.clientY);
-            e.preventDefault(); // Now prevent scroll
-        };
-        
-        const onTouchEnd = (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            
-            const touch = e.changedTouches[0];
-            const x = touch.clientX;
-            const y = touch.clientY;
-            
-            // Check if dropped on canvas
-            const canvas = document.getElementById('creator-canvas');
-            const rect = canvas.getBoundingClientRect();
-            
-            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                // Success drop
-                this.equipItem(category, item.id);
-                this.app.audio.play('ui_sparkle.mp3'); // Special sound for drag equip
-                
-                // Update selection UI
-                document.querySelectorAll('.item-option').forEach(el => el.classList.remove('selected'));
-                element.classList.add('selected');
-            }
-            
-            if (ghost) {
-                ghost.remove();
-                ghost = null;
-            }
-        };
-        
-        element.addEventListener('touchstart', onTouchStart, {passive: false});
-        element.addEventListener('touchmove', onTouchMove, {passive: false});
-        element.addEventListener('touchend', onTouchEnd);
-        element.addEventListener('touchcancel', (e) => {
-            if (ghost) {
-                ghost.remove();
-                ghost = null;
-            }
-            isDragging = false;
+            container.appendChild(el);
         });
     }
 

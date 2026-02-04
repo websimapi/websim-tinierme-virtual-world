@@ -41,20 +41,13 @@
         <!-- Creator Screen -->
         <div id="creator-screen" class="screen">
             <div class="creator-layout">
-                <div class="avatar-display glass-panel">
-                    <canvas id="creator-canvas" width="400" height="500"></canvas>
+                <div class="avatar-display">
+                    <canvas id="creator-canvas"></canvas>
+                    <button id="btn-save-avatar" class="btn-primary floating-action-btn">Enter World ➔</button>
                 </div>
                 <div class="creator-controls glass-panel">
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="hair">Hair</button>
-                        <button class="tab-btn" data-tab="face">Face</button>
-                        <button class="tab-btn" data-tab="clothes">Clothes</button>
-                    </div>
-                    <div class="options-grid" id="creator-options">
+                    <div class="options-scroller" id="creator-options">
                         <!-- Populated by JS -->
-                    </div>
-                    <div class="creator-actions">
-                        <button id="btn-save-avatar" class="btn-primary">Save & Play</button>
                     </div>
                 </div>
             </div>

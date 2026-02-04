@@ -1,8 +1,8 @@
 export const RoomData = {
+    // New structure: Array of placed items
+    // This allows free positioning and layering order
     defaultAvatar: {
-        hair: 'hair_f_1',
-        face: 'face_1',
-        clothes: 'top_1'
+        items: [] // Empty start, let user add base items? Or pre-populate.
     }
 };
 
@@ -50,57 +50,45 @@ export const AvatarRenderer = {
     },
     
     render(ctx, avatarData, width, height) {
-        // Updated for Square assets (512x512 logical size)
-        // We draw everything to fill the target width/height, assuming they are compatible layers
-        
-        // ctx.clearRect(0, 0, width, height); // Managed by caller
+        // avatarData is now expected to be { items: [{id, x, y, scale}] }
         
         ctx.save();
         
-        // Base Layer: Body
+        // 1. Draw Base Body (Always centered, fill fit)
         if (this.assets['base_char.png']) {
             ctx.drawImage(this.assets['base_char.png'], 0, 0, width, height);
         }
         
-        // Helper to draw layer
-        const drawLayer = (itemId) => {
-            const item = ItemDatabase.getItem(itemId);
-            if (!item) return;
-            const img = this.assets[item.sprite.sheet];
-            if (img) {
-                // Calculate dynamic source coordinates based on image size
-                // Assumption: 2x2 grid
-                const srcW = img.naturalWidth / 2;
-                const srcH = img.naturalHeight / 2;
-                const srcX = item.sprite.col * srcW;
-                const srcY = item.sprite.row * srcH;
-
-                ctx.drawImage(
-                    img, 
-                    srcX, srcY, srcW, srcH, // Source
-                    0, 0, width, height // Dest (Full fit)
-                );
-            }
-        };
-
-        // 1. Back Hair (DISABLED FOR DIAGNOSIS)
-        /*
-        let backHairId = null;
-        if (avatarData.hair) {
-             const baseId = avatarData.hair.replace('f', 'b');
-             if (ItemDatabase.getItem(baseId)) backHairId = baseId;
+        // 2. Draw Items
+        if (avatarData && Array.isArray(avatarData.items)) {
+            avatarData.items.forEach(placedItem => {
+                const itemDef = ItemDatabase.getItem(placedItem.id);
+                if (!itemDef) return;
+                
+                const img = this.assets[itemDef.sprite.sheet];
+                if (img) {
+                    const srcW = img.naturalWidth / 2;
+                    const srcH = img.naturalHeight / 2;
+                    const srcX = itemDef.sprite.col * srcW;
+                    const srcY = itemDef.sprite.row * srcH;
+                    
+                    // Logic: Items are stickers.
+                    // Default placedItem.x/y is relative to center of canvas
+                    // width/height is the canvas size
+                    
+                    const offsetX = placedItem.x || 0;
+                    const offsetY = placedItem.y || 0;
+                    
+                    // Draw full size overlaid on body
+                    // We simply shift the draw rect by the offset
+                    ctx.drawImage(
+                        img, 
+                        srcX, srcY, srcW, srcH,
+                        offsetX, offsetY, width, height
+                    );
+                }
+            });
         }
-        if (backHairId) drawLayer(backHairId);
-        */
-
-        // 2. Face (DISABLED FOR DIAGNOSIS)
-        // drawLayer(avatarData.face);
-        
-        // 3. Clothes (DISABLED FOR DIAGNOSIS)
-        // drawLayer(avatarData.clothes);
-        
-        // 4. Front Hair (DISABLED FOR DIAGNOSIS)
-        // drawLayer(avatarData.hair);
         
         ctx.restore();
     },

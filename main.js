@@ -16,7 +16,7 @@ const App = {
         isFirstTime: false,
         coins: 500,
         inventory: [],
-        currentAvatar: { ...RoomData.defaultAvatar },
+        currentAvatar: JSON.parse(JSON.stringify(RoomData.defaultAvatar)), // Deep copy
         input: { x: 0, y: 0 },
         townPlayers: {},
         playerX: 400,

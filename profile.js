@@ -21,7 +21,7 @@ export class ProfileManager {
                 col3: JSON.stringify([]), // Inventory
                 col4: JSON.stringify({}), // Room
             });
-            this.app.state.currentAvatar = RoomData.defaultAvatar;
+            this.app.state.currentAvatar = JSON.parse(JSON.stringify(RoomData.defaultAvatar));
             this.app.state.coins = 500;
             this.app.state.inventory = [];
         } else {
